@@ -1,6 +1,6 @@
 #include "game.hpp"
 
-static void gameRender();
+static void gameRender(Platform& platform, GameState& gameState);
 
 Result<GameState> gameInit() {
     auto gameState = GameState();
@@ -22,13 +22,13 @@ Result<GameState> gameInit() {
     return resultCreateSuccess(gameState);
 }
 
-void gameMainLoop(GameState& gameState, Platform platform, Window window) {
+void gameMainLoop(GameState& gameState, Platform& platform, Window window) {
     FrameInfo& frameInfo = gameState.frameInfo;
     frameInfo.currentTime = platformGetTicks();
     frameInfo.deltaTime = frameInfo.lastTime - frameInfo.currentTime;
 
     if (frameInfo.currentTime >= frameInfo.lastTime + PART_TIME) {
-        gameRender();
+        gameRender(platform, gameState);
         frameInfo.frames += 1;
         frameInfo.lastTime = frameInfo.currentTime;
         gapiSwapWindow(platform, window);
@@ -43,8 +43,9 @@ void gameMainLoop(GameState& gameState, Platform platform, Window window) {
     }
 }
 
-static void gameRender() {
+static void gameRender(Platform& platform, GameState& gameState) {
     gapiClear(0.0f, 0.0f, 0.0f);
+    gapiRender(platform.gapi, gameState);
 }
 
 void gameShutdown() {

@@ -14,16 +14,16 @@ struct Window;
 
 Result<Platform> platformInit();
 
-Result<Window> platformCreateWindow(Platform platform);
+Result<Window> platformCreateWindow(Platform& platform);
 
-bool platformEventLoop(Platform platform, Window window);
+bool platformEventLoop(Platform& platform, Window& window);
 
 float platformGetTicks();
 
-void platformSwapWindow(Platform platform, Window window);
+void platformSwapWindow(Platform& platform, Window& window);
 
-void platformDestroyWindow(Window window);
+void platformDestroyWindow(Window& window);
 
-void platformShutdown(Platform platform);
+void platformShutdown(Platform& platform);
 
 u8* platformAlloc(MemoryIndex size);

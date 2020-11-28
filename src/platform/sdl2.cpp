@@ -9,20 +9,10 @@ Result<Platform> platformInit() {
         );
     }
 
-    auto initGapiResult = gapiInit();
-
-    if (resultHasError(initGapiResult)) {
-        return switchError<Platform>(initGapiResult);
-    }
-
-    Platform platform = {
-        .gapi = resultGetPayload(initGapiResult)
-    };
-
-    return resultCreateSuccess(platform);
+    return resultCreateSuccess(Platform());
 }
 
-Result<Window> platformCreateWindow(Platform platform) {
+Result<Window> platformCreateWindow(Platform& platform) {
     auto sdlWindow = SDL_CreateWindow(
         "Game", // TODO(sysint64): rm hardcode
         SDL_WINDOWPOS_CENTERED,
@@ -51,10 +41,17 @@ Result<Window> platformCreateWindow(Platform platform) {
 
     window.gapiContext = resultGetPayload(createContextResult);
 
+    auto initGapiResult = gapiInit();
+
+    if (resultHasError(initGapiResult)) {
+        return switchError<Window>(initGapiResult);
+    }
+
+    platform.gapi = resultGetPayload(initGapiResult);
     return resultCreateSuccess(window);
 }
 
-bool platformEventLoop(Platform platform, Window window) {
+bool platformEventLoop(Platform& platform, Window& window) {
     SDL_Event event;
 
     while (SDL_PollEvent(&event)) {
@@ -70,15 +67,15 @@ float platformGetTicks() {
     return SDL_GetTicks();
 }
 
-void platformSwapWindow(Platform platform, Window window) {
+void platformSwapWindow(Platform& platform, Window& window) {
     SDL_GL_SwapWindow(window.sdlWindow);
 }
 
-void platformShutdown(Platform platform) {
+void platformShutdown(Platform& platform) {
     SDL_Quit();
 }
 
-void platformDestroyWindow(Window window) {
+void platformDestroyWindow(Window& window) {
     gapiShutdown(window.gapiContext);
     SDL_DestroyWindow(window.sdlWindow);
 }

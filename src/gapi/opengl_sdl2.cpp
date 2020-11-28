@@ -1,7 +1,7 @@
 #include "gapi/opengl_sdl2.hpp"
 #include "platform.hpp"
 
-Result<GApiContext> gapiCreateContext(Platform platform, Window window) {
+Result<GApiContext> gapiCreateContext(Platform& platform, Window window) {
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
@@ -34,7 +34,7 @@ Result<GApiContext> gapiCreateContext(Platform platform, Window window) {
     return resultCreateSuccess(gapiContext);
 }
 
-void gapiSwapWindow(Platform platform, Window window) {
+void gapiSwapWindow(Platform& platform, Window window) {
     SDL_GL_SwapWindow(window.sdlWindow);
 }
 

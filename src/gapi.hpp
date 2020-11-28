@@ -2,6 +2,7 @@
 
 #include "primitives.hpp"
 #include "platform.hpp"
+#include "game_state.hpp"
 
 struct GApi;
 
@@ -21,10 +22,12 @@ struct GApiContext;
 
 Result<GApi> gapiInit();
 
-Result<GApiContext> gapiCreateContext(Platform platform, Window window);
+Result<GApiContext> gapiCreateContext(Platform& platform, Window window);
 
-void gapiSwapWindow(Platform platform, Window window);
+void gapiSwapWindow(Platform& platform, Window window);
 
 void gapiShutdown(GApiContext context);
 
 void gapiClear(float r, float g, float b);
+
+void gapiRender(GApi& gapi, GameState& gameState);
