@@ -4,6 +4,21 @@ static void gameRender();
 
 Result<GameState> gameInit() {
     auto gameState = GameState();
+
+    auto bufferResult = createRegionMemoryBuffer(megabytes(85));
+
+    if (resultIsSuccess(bufferResult)) {
+        auto memoryRootBuffer = resultGetPayload(bufferResult);
+
+        regionMemoryBufferAddRegion(&memoryRootBuffer, &gameState.memory.gapiCommandsBuffer, megabytes(10));
+        regionMemoryBufferAddRegion(&memoryRootBuffer, &gameState.memory.assetsBuffer, megabytes(40));
+        regionMemoryBufferAddRegion(&memoryRootBuffer, &gameState.memory.frameBuffer, megabytes(10));
+
+        return resultCreateSuccess(gameState);
+    } else {
+        return switchError<GameState>(bufferResult);
+    }
+
     return resultCreateSuccess(gameState);
 }
 
