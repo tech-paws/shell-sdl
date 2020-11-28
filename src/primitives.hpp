@@ -46,6 +46,11 @@ struct GeneralError {
     char message[256];
 };
 
+struct String {
+    char* data;
+    size_t len;
+};
+
 template<typename T, typename E = GeneralError>
 struct Result {
     ResultCase resultCase;

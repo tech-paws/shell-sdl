@@ -2,6 +2,7 @@
 
 #include "primitives.hpp"
 #include "platform.hpp"
+#include "gapi/commands.hpp"
 
 struct GApi;
 
