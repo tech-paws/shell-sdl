@@ -1,5 +1,5 @@
 BUILDDIR = build
-LDFLAGS =
+LDFLAGS = -ljpeg -lpng
 CXX = clang++
 CXXFLAGS = -I. -Isrc/ -Wall -std=c++17 -g3
 PLATFORM = SDL

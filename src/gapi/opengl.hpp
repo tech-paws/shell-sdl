@@ -1,6 +1,7 @@
 #pragma once
 
 #include <GL/glew.h>
+#include "memory.hpp"
 
 enum class ShaderType {
     vertex,    fragment,
@@ -23,8 +24,13 @@ struct Texture2D {
 };
 
 struct GApi {
-    ShaderProgram shaderTexture;
-    ShaderProgram shaderColor;
+    RegionMemoryBuffer memoryShaders;
+
+    Shader shaderFragmentColor;
+    Shader shaderFragmentTexture;
+    Shader shaderVertexTransform;
+    ShaderProgram shaderProgramTexture;
+    ShaderProgram shaderProgramColor;
 
     u32 locationTextureShaderMVP;
     u32 locationTextureShaderTexture;
@@ -35,4 +41,9 @@ struct GApi {
     GLuint quadVerticesBuffer;
     GLuint quadTexCoordsBuffer;
     GLuint quadVao;
+
+    GLuint centeredQuadIndicesBuffer;
+    GLuint centeredQuadVerticesBuffer;
+    GLuint centeredQuadTexCoordsBuffer;
+    GLuint centeredQuadVao;
 };

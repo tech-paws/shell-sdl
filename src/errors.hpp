@@ -5,6 +5,11 @@ enum class ErrorCode {
     MemoryInit,
     Allocation,
     CreateWindow,
+    LoadAsset,
     GApiCreateContext,
     GApiInit,
+    GApiCreateShader,
+    GApiShaderStatus,
+    GApiShaderProgramStatus,
+    GApiShaderUniformLocation,
 };
