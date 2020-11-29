@@ -404,8 +404,43 @@ static void gapiSetColorPipeline(GApi& gapi, GAPICommandPayload payload) {
 
     const auto color = (glm::vec4*) payload.base;
     const auto loc = gapi.shaderUniformLocations[GAPI_SHADER_LOCATION_COLOR_SHADER_COLOR_ID];
+    gapi.mvpUniformLocationId = GAPI_SHADER_LOCATION_COLOR_SHADER_MVP_ID;
 
     glUniform4fv(loc, 1, glm::value_ptr(*color));
+}
+
+static void gapiDrawQuads(GApi& gapi, GAPICommandPayload payload) {
+    u64 cursor = 0;
+
+    glBindVertexArray(gapi.quadVao);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, gapi.quadIndicesBuffer);
+
+    while (cursor < payload.size) {
+        const auto mvpMat = (glm::mat4*) &payload.base[cursor];
+        const auto loc = gapi.shaderUniformLocations[gapi.mvpUniformLocationId];
+
+        glUniformMatrix4fv(loc, 1, GL_TRUE, glm::value_ptr(*mvpMat));
+        glDrawElements(GL_TRIANGLE_STRIP, quadIndicesCount, GL_UNSIGNED_INT, nullptr);
+
+        cursor += sizeof(glm::mat4);
+    }
+}
+
+static void gapiDrawCenteredQuads(GApi& gapi, GAPICommandPayload payload) {
+    u64 cursor = 0;
+
+    glBindVertexArray(gapi.centeredQuadVao);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, gapi.quadIndicesBuffer);
+
+    while (cursor < payload.size) {
+        const auto mvpMat = (glm::mat4*) &payload.base[cursor];
+        const auto loc = gapi.shaderUniformLocations[GAPI_SHADER_LOCATION_COLOR_SHADER_MVP_ID];
+
+        glUniformMatrix4fv(loc, 1, GL_TRUE, glm::value_ptr(*mvpMat));
+        glDrawElements(GL_TRIANGLE_STRIP, quadIndicesCount, GL_UNSIGNED_INT, nullptr);
+
+        cursor += sizeof(glm::mat4);
+    }
 }
 
 void gapiRender(GApi& gapi, GameState& gameState) {
@@ -417,6 +452,11 @@ void gapiRender(GApi& gapi, GameState& gameState) {
 
         switch (command->id) {
             case GAPI_COMMAND_DRAW_QUADS:
+                gapiDrawQuads(gapi, command->payload);
+                break;
+
+            case GAPI_COMMAND_DRAW_CENTERED_QUADS:
+                gapiDrawCenteredQuads(gapi, command->payload);
                 break;
 
             case GAPI_COMMAND_SET_COLOR_PIPELINE:

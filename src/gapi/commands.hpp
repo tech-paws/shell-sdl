@@ -16,7 +16,8 @@ static const u64 GAPI_COMMAND_SET_TEXTURE_PIPELINE = 0x0102;
 static const u64 GAPI_COMMAND_DRAW_LINES = 0x0201;
 static const u64 GAPI_COMMAND_DRAW_PATH = 0x0202;
 static const u64 GAPI_COMMAND_DRAW_QUADS = 0x0203;
-static const u64 GAPI_COMMAND_DRAW_TEXTS = 0x0204;
+static const u64 GAPI_COMMAND_DRAW_CENTERED_QUADS = 0x0204;
+static const u64 GAPI_COMMAND_DRAW_TEXTS = 0x0205;
 
 struct GAPICommandPayload {
     u64 size;
@@ -84,9 +85,14 @@ inline void drawPath(GameState& gameState, glm::vec3* points, size_t count) {
     gapiPushCommand(gameState, GAPI_COMMAND_DRAW_PATH, payload);
 }
 
-inline void drawQuads(GameState& gameState, glm::vec4* quads, size_t count) {
-    auto payload = gapiCreateCommandPayload(gameState, quads, count);
+inline void drawQuads(GameState& gameState, glm::mat4* quadsMvpMatrices, size_t count) {
+    auto payload = gapiCreateCommandPayload(gameState, quadsMvpMatrices, count);
     gapiPushCommand(gameState, GAPI_COMMAND_DRAW_QUADS, payload);
+}
+
+inline void drawCenteredQuads(GameState& gameState, glm::mat4* quadsMvpMatrices, size_t count) {
+    auto payload = gapiCreateCommandPayload(gameState, quadsMvpMatrices, count);
+    gapiPushCommand(gameState, GAPI_COMMAND_DRAW_CENTERED_QUADS, payload);
 }
 
 inline void drawTexts(GameState& gameState, String* texts, size_t count) {

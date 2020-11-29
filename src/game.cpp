@@ -2,6 +2,8 @@
 
 static void gameRender(Platform& platform, GameState& gameState);
 
+static void gameStep(GameState& gameState, double deltaTime);
+
 Result<GameState> gameInit() {
     auto gameState = GameState();
 
@@ -29,6 +31,7 @@ void gameMainLoop(GameState& gameState, Platform& platform, Window window) {
     frameInfo.deltaTime = frameInfo.lastTime - frameInfo.currentTime;
 
     if (frameInfo.currentTime >= frameInfo.lastTime + PART_TIME) {
+        gameStep(gameState, frameInfo.deltaTime);
         gameRender(platform, gameState);
         frameInfo.frames += 1;
         frameInfo.lastTime = frameInfo.currentTime;
@@ -49,10 +52,22 @@ static void gameRender(Platform& platform, GameState& gameState) {
 
     gapiSetColorPipeline(gameState, glm::vec4(1, 0, 0, 1));
 
-    auto quad = glm::vec4(0, 0, 100, 100);
-    drawQuads(gameState, &quad, 1);
-
+    drawCenteredQuads(gameState, &gameState.testSpriteMVPMatrix, 1);
     gapiRender(platform.gapi, gameState);
+}
+
+static void gameStep(GameState& gameState, double deltaTime) {
+    gameState.cameraMatrices = transformsCreateOrthoCameraMatrices(gameState.cameraTransform);
+
+    gameState.testSpriteTransforms.position = glm::vec2(
+        gameState.cameraTransform.viewportSize.x / 2.f,
+        gameState.cameraTransform.viewportSize.y / 2.f
+    );
+    gameState.testSpriteTransforms.scaling = glm::vec2(430.0f, 600.0f);
+    gameState.testSpriteTransforms.rotation += (0.25f/1000.f) * deltaTime;
+
+    gameState.testSpriteModelMatrix = transformsCreate2DModelMatrix(gameState.testSpriteTransforms);
+    gameState.testSpriteMVPMatrix = gameState.cameraMatrices.mvpMatrix * gameState.testSpriteModelMatrix;
 }
 
 void gameShutdown() {

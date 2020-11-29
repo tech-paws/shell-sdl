@@ -22,6 +22,6 @@ struct Transforms2D {
     float rotation { 0.f };
 };
 
-CameraMatrices gapiCreateOrthoCameraMatrices(const OthroCameraTransforms transforms);
+CameraMatrices transformsCreateOrthoCameraMatrices(const OthroCameraTransforms transforms);
 
-glm::mat4 gapiCreate2DModelMatrix(Transforms2D transforms);
+glm::mat4 transformsCreate2DModelMatrix(Transforms2D transforms);

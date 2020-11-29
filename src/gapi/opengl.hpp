@@ -52,4 +52,6 @@ struct GApi {
     GLuint centeredQuadVerticesBuffer;
     GLuint centeredQuadTexCoordsBuffer;
     GLuint centeredQuadVao;
+
+    size_t mvpUniformLocationId;
 };
