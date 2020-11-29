@@ -204,7 +204,7 @@ static void initQuad(GApi& gapi) {
     gapiCreateVector2fVAO(gapi.centeredQuadTexCoordsBuffer, 1);
 }
 
-static Result<Shader> gapiLoadShader(GApi& gapi, const char* name, const char* fileName, ShaderType type) {
+static Result<bool> gapiLoadShader(GApi& gapi, size_t id, const char* name, const char* fileName, ShaderType type) {
     const Result<AssetData> shaderAssetResult = assetLoadData(
         &gapi.memoryShaders,
         AssetType::shader,
@@ -212,71 +212,66 @@ static Result<Shader> gapiLoadShader(GApi& gapi, const char* name, const char* f
     );
 
     if (resultHasError(shaderAssetResult)) {
-        return switchError<Shader>(shaderAssetResult);
+        return switchError<bool>(shaderAssetResult);
     }
 
     const auto shaderAsset = resultGetPayload(shaderAssetResult);
     const auto shaderResult = gapiCreateShader(name, type, shaderAsset);
 
     if (resultHasError(shaderResult)) {
-        return switchError<Shader>(shaderResult);
+        return switchError<bool>(shaderResult);
     }
 
-    return shaderResult;
+    gapi.shaders[id] = resultGetPayload(shaderResult);
+    return resultCreateSuccess(true);
 }
 
-static Result<bool> initFragmentColorShader(GApi& gapi) {
-    const auto shaderResult = gapiLoadShader(
+inline static Result<bool> initFragmentColorShader(GApi& gapi) {
+    return gapiLoadShader(
         gapi,
+        GAPI_SHADER_FRAGMENT_COLOR_ID,
         "Fragment Color",
         "fragment_color.glsl",
         ShaderType::fragment
     );
-
-    if (resultHasError(shaderResult)) {
-        return switchError<bool>(shaderResult);
-    }
-
-    gapi.shaderFragmentColor = resultGetPayload(shaderResult);
-    return resultCreateSuccess(true);
 }
 
-static Result<bool> initFragmentTextureShader(GApi& gapi) {
-    const auto shaderResult = gapiLoadShader(
+inline static Result<bool> initFragmentTextureShader(GApi& gapi) {
+    return gapiLoadShader(
         gapi,
+        GAPI_SHADER_FRAGMENT_TEXTURE_ID,
         "Fragment Texture",
         "fragment_texture.glsl",
         ShaderType::fragment
     );
-
-    if (resultHasError(shaderResult)) {
-        return switchError<bool>(shaderResult);
-    }
-
-    gapi.shaderFragmentTexture = resultGetPayload(shaderResult);
-    return resultCreateSuccess(true);
 }
 
-static Result<bool> initVertexTransformShader(GApi& gapi) {
-    const auto shaderResult = gapiLoadShader(
+inline static Result<bool> initVertexTransformShader(GApi& gapi) {
+    return gapiLoadShader(
         gapi,
+        GAPI_SHADER_VERTEX_TRANSFORM_ID,
         "Vertex Transform",
         "vertex_transform.glsl",
         ShaderType::vertex
     );
+}
 
-    if (resultHasError(shaderResult)) {
-        return switchError<bool>(shaderResult);
+static Result<bool> initShaderUniformLocation(GApi& gapi, size_t id, ShaderProgram& program, const char* location) {
+    Result<u32> locationResult;
+    locationResult = gapiGetShaderUniformLocation(program, location);
+
+    if (resultHasError(locationResult)) {
+        return switchError<bool>(locationResult);
+    } else {
+        gapi.shaderUniformLocations[id] = resultGetPayload(locationResult);
+        return resultCreateSuccess(true);
     }
-
-    gapi.shaderVertexTransform = resultGetPayload(shaderResult);
-    return resultCreateSuccess(true);
 }
 
 static Result<bool> initColorShaderProgram(GApi& gapi) {
     Shader shaders[2];
-    shaders[0] = gapi.shaderVertexTransform;
-    shaders[1] = gapi.shaderFragmentColor;
+    shaders[0] = gapi.shaders[GAPI_SHADER_VERTEX_TRANSFORM_ID];
+    shaders[1] = gapi.shaders[GAPI_SHADER_FRAGMENT_COLOR_ID];
     const auto programResult = gapiCreateShaderProgram("Color Shader Program", &shaders[0], 2);
 
     if (resultHasError(programResult)) {
@@ -285,22 +280,18 @@ static Result<bool> initColorShaderProgram(GApi& gapi) {
 
     auto program = resultGetPayload(programResult);
 
-    Result<u32> locationResult;
-    locationResult = gapiGetShaderUniformLocation(program, "MVP");
+    Result<bool> locationResult;
+    locationResult = initShaderUniformLocation(gapi, GAPI_SHADER_LOCATION_COLOR_SHADER_MVP_ID, program, "MVP");
 
     if (resultHasError(locationResult)) {
-        return switchError<bool>(locationResult);
+        return locationResult;
     }
 
-    gapi.locationColorShaderMVP = resultGetPayload(locationResult);
-
-    locationResult = gapiGetShaderUniformLocation(program, "color");
+    locationResult = initShaderUniformLocation(gapi, GAPI_SHADER_LOCATION_COLOR_SHADER_COLOR_ID, program, "color");
 
     if (resultHasError(locationResult)) {
-        return switchError<bool>(locationResult);
+        return locationResult;
     }
-
-    gapi.locationColorShaderColor = resultGetPayload(locationResult);
 
     gapi.shaderProgramColor = program;
     return resultCreateSuccess(true);
@@ -308,8 +299,8 @@ static Result<bool> initColorShaderProgram(GApi& gapi) {
 
 static Result<bool> initTextureShaderProgram(GApi& gapi) {
     Shader shaders[2];
-    shaders[0] = gapi.shaderVertexTransform;
-    shaders[1] = gapi.shaderFragmentTexture;
+    shaders[0] = gapi.shaders[GAPI_SHADER_VERTEX_TRANSFORM_ID];
+    shaders[1] = gapi.shaders[GAPI_SHADER_FRAGMENT_TEXTURE_ID];
     const auto programResult = gapiCreateShaderProgram("Texture Shader Program", &shaders[0], 2);
 
     if (resultHasError(programResult)) {
@@ -318,22 +309,18 @@ static Result<bool> initTextureShaderProgram(GApi& gapi) {
 
     auto program = resultGetPayload(programResult);
 
-    Result<u32> locationResult;
-    locationResult = gapiGetShaderUniformLocation(program, "MVP");
+    Result<bool> locationResult;
+    locationResult = initShaderUniformLocation(gapi, GAPI_SHADER_LOCATION_TEXTURE_SHADER_MVP_ID, program, "MVP");
 
     if (resultHasError(locationResult)) {
-        return switchError<bool>(locationResult);
+        return locationResult;
     }
 
-    gapi.locationTextureShaderMVP = resultGetPayload(locationResult);
-
-    locationResult = gapiGetShaderUniformLocation(program, "utexture");
+    locationResult = initShaderUniformLocation(gapi, GAPI_SHADER_LOCATION_TEXTURE_SHADER_TEXTURE_ID, program, "utexture");
 
     if (resultHasError(locationResult)) {
-        return switchError<bool>(locationResult);
+        return locationResult;
     }
-
-    gapi.locationTextureShaderTexture = resultGetPayload(locationResult);
 
     gapi.shaderProgramTexture = program;
     return resultCreateSuccess(true);
@@ -360,7 +347,7 @@ Result<GApi> gapiInit() {
         initQuad(gapi);
         initCenteredQuad(gapi);
 
-        // Shader
+        // Shaders
         initComponentResult = initFragmentColorShader(gapi);
 
         if (resultHasError(initComponentResult)) {
@@ -379,6 +366,7 @@ Result<GApi> gapiInit() {
             return switchError<GApi>(initComponentResult);
         }
 
+        // Programs
         initComponentResult = initColorShaderProgram(gapi);
 
         if (resultHasError(initComponentResult)) {

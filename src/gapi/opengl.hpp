@@ -23,19 +23,25 @@ struct Texture2D {
     u32 height;
 };
 
+static const size_t GAPI_SHADER_FRAGMENT_COLOR_ID = 0;
+static const size_t GAPI_SHADER_FRAGMENT_TEXTURE_ID = 1;
+static const size_t GAPI_SHADER_VERTEX_TRANSFORM_ID = 2;
+
+static const size_t GAPI_SHADER_LOCATION_TEXTURE_SHADER_MVP_ID = 0;
+static const size_t GAPI_SHADER_LOCATION_TEXTURE_SHADER_TEXTURE_ID = 1;
+static const size_t GAPI_SHADER_LOCATION_COLOR_SHADER_MVP_ID = 2;
+static const size_t GAPI_SHADER_LOCATION_COLOR_SHADER_COLOR_ID = 3;
+
 struct GApi {
     RegionMemoryBuffer memoryShaders;
 
-    Shader shaderFragmentColor;
-    Shader shaderFragmentTexture;
-    Shader shaderVertexTransform;
+    Shader shaders[3];
+    ShaderProgram shaderPrograms[2];
+    u32 shaderUniformLocations[4];
+    GLuint buffers[8];
+
     ShaderProgram shaderProgramTexture;
     ShaderProgram shaderProgramColor;
-
-    u32 locationTextureShaderMVP;
-    u32 locationTextureShaderTexture;
-    u32 locationColorShaderMVP;
-    u32 locationColorShaderColor;
 
     GLuint quadIndicesBuffer;
     GLuint quadVerticesBuffer;
