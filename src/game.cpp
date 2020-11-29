@@ -1,8 +1,24 @@
 #include "game.hpp"
+#include "assets.hpp"
 
 static void gameRender(Platform& platform, GameState& gameState);
 
 static void gameStep(GameState& gameState, double deltaTime);
+
+static void initTexture(GameState& gameState) {
+    const Result<AssetData> testTextureResult = assetLoadData(
+        &gameState.memory.assetsBuffer,
+        AssetType::texture,
+        "test.jpg"
+    );
+
+    const AssetData testTexture = resultUnwrap(testTextureResult);
+    const Texture2DParameters params = {
+        .minFilter = true,
+        .magFilter = true,
+    };
+    gameState.testSpriteTexture = gapiCreateTexture2D(testTexture, params);
+}
 
 Result<GameState> gameInit() {
     auto gameState = GameState();
@@ -17,12 +33,12 @@ Result<GameState> gameInit() {
         regionMemoryBufferAddRegion(&memoryRootBuffer, &gameState.memory.assetsBuffer, megabytes(40));
         regionMemoryBufferAddRegion(&memoryRootBuffer, &gameState.memory.frameBuffer, megabytes(10));
 
+        initTexture(gameState);
+
         return resultCreateSuccess(gameState);
     } else {
         return switchError<GameState>(bufferResult);
     }
-
-    return resultCreateSuccess(gameState);
 }
 
 void gameMainLoop(GameState& gameState, Platform& platform, Window window) {
@@ -50,10 +66,11 @@ void gameMainLoop(GameState& gameState, Platform& platform, Window window) {
 static void gameRender(Platform& platform, GameState& gameState) {
     gapiClear(0.0f, 0.0f, 0.0f);
 
-    gapiSetColorPipeline(gameState, glm::vec4(1, 0, 0, 1));
+    // gapiSetColorPipeline(gameState.memory, glm::vec4(1, 0, 0, 1));
+    gapiSetTexturePipeline(gameState.memory, gameState.testSpriteTexture.id);
 
-    drawCenteredQuads(gameState, &gameState.testSpriteMVPMatrix, 1);
-    gapiRender(platform.gapi, gameState);
+    drawCenteredQuads(gameState.memory, &gameState.testSpriteMVPMatrix, 1);
+    gapiRender(platform.gapi, gameState.memory);
 }
 
 static void gameStep(GameState& gameState, double deltaTime) {

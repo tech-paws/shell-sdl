@@ -2,7 +2,8 @@
 
 #include "primitives.hpp"
 #include "platform.hpp"
-#include "game_state.hpp"
+#include "game_memory.hpp"
+#include "assets.hpp"
 
 struct GApi;
 
@@ -20,6 +21,15 @@ struct GApiContext;
 
 #endif
 
+struct Texture2D;
+
+struct Texture2DParameters {
+    bool wrapS;
+    bool wrapT;
+    bool minFilter;
+    bool magFilter;
+};
+
 Result<GApi> gapiInit();
 
 Result<GApiContext> gapiCreateContext(Platform& platform, Window window);
@@ -30,4 +40,8 @@ void gapiShutdown(GApiContext context);
 
 void gapiClear(float r, float g, float b);
 
-void gapiRender(GApi& gapi, GameState& gameState);
+void gapiRender(GApi& gapi, GameMemory& memory);
+
+Texture2D gapiCreateTexture2D(AssetData data, Texture2DParameters params);
+
+void gapiDeleteTexture2D(Texture2D texture);

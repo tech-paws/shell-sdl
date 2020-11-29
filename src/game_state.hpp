@@ -2,6 +2,8 @@
 
 #include "memory.hpp"
 #include "transforms.hpp"
+#include "gapi.hpp"
+#include "game_memory.hpp"
 
 struct FrameInfo {
     float currentTime = 0.f;
@@ -12,14 +14,6 @@ struct FrameInfo {
     int fps = 0;
 };
 
-struct GameMemory {
-    RegionMemoryBuffer gapiCommandsBuffer;
-    RegionMemoryBuffer gapiCommandsDataBuffer;
-    RegionMemoryBuffer rootBuffer;
-    RegionMemoryBuffer assetsBuffer;
-    RegionMemoryBuffer frameBuffer;
-};
-
 struct GameState {
     FrameInfo frameInfo;
     GameMemory memory;
@@ -27,6 +21,7 @@ struct GameState {
     Transforms2D testSpriteTransforms;
     glm::mat4 testSpriteModelMatrix;
     glm::mat4 testSpriteMVPMatrix;
+    Texture2D testSpriteTexture;
 
     CameraMatrices cameraMatrices;
     OthroCameraTransforms cameraTransform = {

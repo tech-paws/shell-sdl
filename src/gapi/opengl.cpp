@@ -392,6 +392,55 @@ void gapiClear(float r, float g, float b) {
     glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 }
 
+Texture2D gapiCreateTexture2D(const AssetData data, const Texture2DParameters params) {
+    Texture2D texture;
+    TextureHeader textureHeader = *((TextureHeader*) data.data);
+    u8* textureData = data.data + sizeof(TextureHeader);
+
+    texture.width = textureHeader.width;
+    texture.height = textureHeader.height;
+
+    GLenum format;
+
+    switch (textureHeader.format) {
+        case TextureFormat::rgb:
+            format = GL_RGB;
+            break;
+
+        case TextureFormat::rgba:
+            format = GL_RGBA;
+            break;
+    }
+
+    glGenTextures(1, &texture.id);
+    glBindTexture(GL_TEXTURE_2D, texture.id);
+
+    // TODO: Not sure if I should use it
+    // glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+    glTexImage2D(
+        /* target */ GL_TEXTURE_2D,
+        /* level */ 0,
+        /* internalformat */ format,
+        /* width */ texture.width,
+        /* height */ texture.height,
+        /* border */ 0,
+        /* format */ format,
+        /* type */ GL_UNSIGNED_BYTE,
+        /* data */ textureData
+    );
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+    return texture;
+}
+
+void gapiDeleteTexture2D(Texture2D texture) {
+    glDeleteTextures(1, &texture.id);
+}
+
 static void gapiSetColorPipeline(GApi& gapi, GAPICommandPayload payload) {
 
 #ifdef VALIDATE
@@ -407,6 +456,25 @@ static void gapiSetColorPipeline(GApi& gapi, GAPICommandPayload payload) {
     gapi.mvpUniformLocationId = GAPI_SHADER_LOCATION_COLOR_SHADER_MVP_ID;
 
     glUniform4fv(loc, 1, glm::value_ptr(*color));
+}
+
+static void gapiSetTexturePipeline(GApi& gapi, GAPICommandPayload payload) {
+
+#ifdef VALIDATE
+    glValidateProgram(gapi.shaderProgramColor.id);
+    const auto statusReault = checkProgramStatus(gapi.shaderProgramColor, GL_VALIDATE_STATUS);
+    resultUnwrap(statusReault);
+#endif
+
+    glUseProgram(gapi.shaderProgramTexture.id);
+
+    const auto textureId = (u64*) payload.base;
+    const auto loc = gapi.shaderUniformLocations[GAPI_SHADER_LOCATION_TEXTURE_SHADER_TEXTURE_ID];
+    gapi.mvpUniformLocationId = GAPI_SHADER_LOCATION_TEXTURE_SHADER_MVP_ID;
+
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, *textureId);
+    glUniform1i(loc, 1);
 }
 
 static void gapiDrawQuads(GApi& gapi, GAPICommandPayload payload) {
@@ -443,8 +511,8 @@ static void gapiDrawCenteredQuads(GApi& gapi, GAPICommandPayload payload) {
     }
 }
 
-void gapiRender(GApi& gapi, GameState& gameState) {
-    auto commandsBuffer = &gameState.memory.gapiCommandsBuffer;
+void gapiRender(GApi& gapi, GameMemory& memory) {
+    auto commandsBuffer = &memory.gapiCommandsBuffer;
     u64 cursor = 0;
 
     while (cursor < commandsBuffer->offset) {
@@ -463,6 +531,10 @@ void gapiRender(GApi& gapi, GameState& gameState) {
                 gapiSetColorPipeline(gapi, command->payload);
                 break;
 
+            case GAPI_COMMAND_SET_TEXTURE_PIPELINE:
+                gapiSetTexturePipeline(gapi, command->payload);
+                break;
+
             default:
                 printf("Unknown command type: 0x%04lX\n", command->id);
                 break;
@@ -472,5 +544,5 @@ void gapiRender(GApi& gapi, GameState& gameState) {
     }
 
     regionMemoryBufferFree(commandsBuffer);
-    regionMemoryBufferFree(&gameState.memory.gapiCommandsDataBuffer);
+    regionMemoryBufferFree(&memory.gapiCommandsDataBuffer);
 }

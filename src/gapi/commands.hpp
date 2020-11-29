@@ -1,7 +1,7 @@
 #pragma once
 
 #include <glm/glm.hpp>
-#include "game_state.hpp"
+#include "game_memory.hpp"
 
 // General
 static const u64 GAPI_COMMAND_EXECUTE_MACRO = 0x0001;
@@ -31,71 +31,71 @@ struct GAPICommand {
 
 static const GAPICommandPayload gapiEmptyCommandPayload = {0, nullptr};
 
-inline void gapiPushCommand(GameState& gameState, u64 id, GAPICommandPayload payload) {
+inline void gapiPushCommand(GameMemory& memory, u64 id, GAPICommandPayload payload) {
     GAPICommand command = { id, payload };
-    auto result = regionMemoryPushStruct(&gameState.memory.gapiCommandsBuffer, command);
+    auto result = regionMemoryPushStruct(&memory.gapiCommandsBuffer, command);
     resultUnwrap(result);
 }
 
 template<typename T>
-GAPICommandPayload gapiCreateCommandPayload(GameState& gameState, T* values, size_t len) {
-    auto dataResult = regionMemoryPushChunk(&gameState.memory.gapiCommandsDataBuffer, values, len);
+GAPICommandPayload gapiCreateCommandPayload(GameMemory& memory, T* values, size_t len) {
+    auto dataResult = regionMemoryPushChunk(&memory.gapiCommandsDataBuffer, values, len);
     auto data = resultUnwrap(dataResult);
     return { len * sizeof(T), data };
 }
 
 // General
 
-inline void gapiExecuteMacro(GameState& gameState, u64 id) {
-    auto payload = gapiCreateCommandPayload(gameState, &id, 1);
-    gapiPushCommand(gameState, GAPI_COMMAND_EXECUTE_MACRO, payload);
+inline void gapiExecuteMacro(GameMemory& memory, u64 id) {
+    auto payload = gapiCreateCommandPayload(memory, &id, 1);
+    gapiPushCommand(memory, GAPI_COMMAND_EXECUTE_MACRO, payload);
 }
 
-inline void gapiBeginMacro(GameState& gameState, u64 id) {
-    auto payload = gapiCreateCommandPayload(gameState, &id, 1);
-    gapiPushCommand(gameState, GAPI_COMMAND_BEGIN_MACRO, payload);
+inline void gapiBeginMacro(GameMemory& memory, u64 id) {
+    auto payload = gapiCreateCommandPayload(memory, &id, 1);
+    gapiPushCommand(memory, GAPI_COMMAND_BEGIN_MACRO, payload);
 }
 
-inline void gapiEndMacro(GameState& gameState, u64 id) {
-    auto payload = gapiCreateCommandPayload(gameState, &id, 1);
-    gapiPushCommand(gameState, GAPI_COMMAND_END_MACRO, payload);
+inline void gapiEndMacro(GameMemory& memory, u64 id) {
+    auto payload = gapiCreateCommandPayload(memory, &id, 1);
+    gapiPushCommand(memory, GAPI_COMMAND_END_MACRO, payload);
 }
 
 // Pipelines
 
-inline void gapiSetColorPipeline(GameState& gameState, glm::vec4 color) {
-    auto payload = gapiCreateCommandPayload(gameState, &color, 1);
-    gapiPushCommand(gameState, GAPI_COMMAND_SET_COLOR_PIPELINE, payload);
+inline void gapiSetColorPipeline(GameMemory& memory, glm::vec4 color) {
+    auto payload = gapiCreateCommandPayload(memory, &color, 1);
+    gapiPushCommand(memory, GAPI_COMMAND_SET_COLOR_PIPELINE, payload);
 }
 
-inline void gapiSetTexturePipeline(GameState& gameState, u64 textureId) {
-    auto payload = gapiCreateCommandPayload(gameState, &textureId, 1);
-    gapiPushCommand(gameState, GAPI_COMMAND_SET_TEXTURE_PIPELINE, payload);
+inline void gapiSetTexturePipeline(GameMemory& memory, u64 textureId) {
+    auto payload = gapiCreateCommandPayload(memory, &textureId, 1);
+    gapiPushCommand(memory, GAPI_COMMAND_SET_TEXTURE_PIPELINE, payload);
 }
 
 // Draw
 
-inline void drawLines(GameState& gameState, glm::vec3* points, size_t count) {
-    auto payload = gapiCreateCommandPayload(gameState, points, count);
-    gapiPushCommand(gameState, GAPI_COMMAND_DRAW_LINES, payload);
+inline void drawLines(GameMemory& memory, glm::vec3* points, size_t count) {
+    auto payload = gapiCreateCommandPayload(memory, points, count);
+    gapiPushCommand(memory, GAPI_COMMAND_DRAW_LINES, payload);
 }
 
-inline void drawPath(GameState& gameState, glm::vec3* points, size_t count) {
-    auto payload = gapiCreateCommandPayload(gameState, points, count);
-    gapiPushCommand(gameState, GAPI_COMMAND_DRAW_PATH, payload);
+inline void drawPath(GameMemory& memory, glm::vec3* points, size_t count) {
+    auto payload = gapiCreateCommandPayload(memory, points, count);
+    gapiPushCommand(memory, GAPI_COMMAND_DRAW_PATH, payload);
 }
 
-inline void drawQuads(GameState& gameState, glm::mat4* quadsMvpMatrices, size_t count) {
-    auto payload = gapiCreateCommandPayload(gameState, quadsMvpMatrices, count);
-    gapiPushCommand(gameState, GAPI_COMMAND_DRAW_QUADS, payload);
+inline void drawQuads(GameMemory& memory, glm::mat4* quadsMvpMatrices, size_t count) {
+    auto payload = gapiCreateCommandPayload(memory, quadsMvpMatrices, count);
+    gapiPushCommand(memory, GAPI_COMMAND_DRAW_QUADS, payload);
 }
 
-inline void drawCenteredQuads(GameState& gameState, glm::mat4* quadsMvpMatrices, size_t count) {
-    auto payload = gapiCreateCommandPayload(gameState, quadsMvpMatrices, count);
-    gapiPushCommand(gameState, GAPI_COMMAND_DRAW_CENTERED_QUADS, payload);
+inline void drawCenteredQuads(GameMemory& memory, glm::mat4* quadsMvpMatrices, size_t count) {
+    auto payload = gapiCreateCommandPayload(memory, quadsMvpMatrices, count);
+    gapiPushCommand(memory, GAPI_COMMAND_DRAW_CENTERED_QUADS, payload);
 }
 
-inline void drawTexts(GameState& gameState, String* texts, size_t count) {
-    auto payload = gapiCreateCommandPayload(gameState, texts, count);
-    gapiPushCommand(gameState, GAPI_COMMAND_DRAW_TEXTS, payload);
+inline void drawTexts(GameMemory& memory, String* texts, size_t count) {
+    auto payload = gapiCreateCommandPayload(memory, texts, count);
+    gapiPushCommand(memory, GAPI_COMMAND_DRAW_TEXTS, payload);
 }
