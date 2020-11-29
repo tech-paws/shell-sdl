@@ -1,8 +1,10 @@
 #include "primitives.hpp"
 #include "gapi/opengl.hpp"
+#include "gapi/commands.hpp"
 #include "platform.hpp"
 #include "assets.hpp"
 #include <glm/glm.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 const size_t quadVerticesCount = 4;
 const glm::vec2 centeredQuadVertices[quadVerticesCount] = {
@@ -390,11 +392,45 @@ void gapiClear(float r, float g, float b) {
     glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 }
 
+static void gapiSetColorPipeline(GApi& gapi, GAPICommandPayload payload) {
+
+#ifdef VALIDATE
+    glValidateProgram(gapi.shaderProgramColor.id);
+    const auto statusReault = checkProgramStatus(gapi.shaderProgramColor, GL_VALIDATE_STATUS);
+    resultUnwrap(statusReault);
+#endif
+
+    glUseProgram(gapi.shaderProgramColor.id);
+
+    const auto color = (glm::vec4*) payload.base;
+    const auto loc = gapi.shaderUniformLocations[GAPI_SHADER_LOCATION_COLOR_SHADER_COLOR_ID];
+
+    glUniform4fv(loc, 1, glm::value_ptr(*color));
+}
+
 void gapiRender(GApi& gapi, GameState& gameState) {
     auto commandsBuffer = &gameState.memory.gapiCommandsBuffer;
+    u64 cursor = 0;
 
-    while (u64 cursor = 0 < commandsBuffer->offset) {
+    while (cursor < commandsBuffer->offset) {
+        auto command = (GAPICommand*) &commandsBuffer->base[cursor];
+
+        switch (command->id) {
+            case GAPI_COMMAND_DRAW_QUADS:
+                break;
+
+            case GAPI_COMMAND_SET_COLOR_PIPELINE:
+                gapiSetColorPipeline(gapi, command->payload);
+                break;
+
+            default:
+                printf("Unknown command type: 0x%04lX\n", command->id);
+                break;
+        }
+
+        cursor += sizeof(GAPICommand);
     }
 
     regionMemoryBufferFree(commandsBuffer);
+    regionMemoryBufferFree(&gameState.memory.gapiCommandsDataBuffer);
 }

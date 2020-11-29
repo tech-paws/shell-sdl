@@ -2,6 +2,7 @@
 
 #include <cassert>
 #include "primitives.hpp"
+#include <glm/glm.hpp>
 
 struct RegionMemoryBuffer {
     u8* base;
@@ -48,8 +49,8 @@ Result<u8*> regionMemoryPushStruct(RegionMemoryBuffer* buffer, T data) {
     auto dataResult = regionMemoryBufferAlloc(buffer, sizeof(T));
 
     if (resultIsSuccess(dataResult)) {
-        auto data = resultGetPayload(dataResult);
-        memcpy(data, &data, sizeof(T));
+        auto base = resultGetPayload(dataResult);
+        memcpy(base, &data, sizeof(T));
     }
 
     return dataResult;
@@ -60,8 +61,8 @@ Result<u8*> regionMemoryPushChunk(RegionMemoryBuffer* buffer, T* data, size_t le
     auto dataResult = regionMemoryBufferAlloc(buffer, sizeof(T) * len);
 
     if (resultIsSuccess(dataResult)) {
-        auto data = resultGetPayload(dataResult);
-        memcpy(data, data, sizeof(T) * len);
+        auto base = resultGetPayload(dataResult);
+        memcpy(base, data, sizeof(T) * len);
     }
 
     return dataResult;

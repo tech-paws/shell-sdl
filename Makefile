@@ -1,7 +1,7 @@
 BUILDDIR = build
 LDFLAGS = -ljpeg -lpng
 CXX = clang++
-CXXFLAGS = -I. -Isrc/ -Wall -std=c++17 -g3
+CXXFLAGS = -I. -Isrc/ -Wall -std=c++17 -g3 -DVALIDATE
 PLATFORM = SDL
 GAPI = OPENGL
 

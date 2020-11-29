@@ -11,6 +11,7 @@ Result<GameState> gameInit() {
         auto memoryRootBuffer = resultGetPayload(bufferResult);
 
         regionMemoryBufferAddRegion(&memoryRootBuffer, &gameState.memory.gapiCommandsBuffer, megabytes(10));
+        regionMemoryBufferAddRegion(&memoryRootBuffer, &gameState.memory.gapiCommandsDataBuffer, megabytes(10));
         regionMemoryBufferAddRegion(&memoryRootBuffer, &gameState.memory.assetsBuffer, megabytes(40));
         regionMemoryBufferAddRegion(&memoryRootBuffer, &gameState.memory.frameBuffer, megabytes(10));
 
@@ -45,6 +46,12 @@ void gameMainLoop(GameState& gameState, Platform& platform, Window window) {
 
 static void gameRender(Platform& platform, GameState& gameState) {
     gapiClear(0.0f, 0.0f, 0.0f);
+
+    gapiSetColorPipeline(gameState, glm::vec4(1, 0, 0, 1));
+
+    auto quad = glm::vec4(0, 0, 100, 100);
+    drawQuads(gameState, &quad, 1);
+
     gapiRender(platform.gapi, gameState);
 }
 
