@@ -42,6 +42,8 @@ void gapiClear(float r, float g, float b);
 
 void gapiRender(GApi& gapi, GameMemory& memory);
 
+void gapiRender2(GApi& gapi);
+
 Texture2D gapiCreateTexture2D(AssetData data, Texture2DParameters params);
 
 void gapiDeleteTexture2D(Texture2D texture);

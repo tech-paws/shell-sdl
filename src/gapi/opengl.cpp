@@ -511,6 +511,9 @@ static void gapiDrawCenteredQuads(GApi& gapi, GAPICommandPayload payload) {
     }
 }
 
+void gapiRender2(GApi& gapi) {
+}
+
 void gapiRender(GApi& gapi, GameMemory& memory) {
     auto commandsBuffer = &memory.gapiCommandsBuffer;
     u64 cursor = 0;

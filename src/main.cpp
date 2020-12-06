@@ -1,7 +1,7 @@
 #include <stdio.h>
 
 #include "platform.hpp"
-#include "game.hpp"
+#include "shell.hpp"
 
 int main() {
     auto platformInitResult = platformInit();
@@ -13,14 +13,14 @@ int main() {
         if (resultIsSuccess(createWindowResult)) {
             auto window = resultGetPayload(createWindowResult);
             bool running = true;
-            auto gameStateResult = gameInit();
+            auto shellStateResult = shellInit();
 
-            if (resultIsSuccess(gameStateResult)) {
-                auto gameState = resultGetPayload(gameStateResult);
+            if (resultIsSuccess(shellStateResult)) {
+                auto shellState = resultGetPayload(shellStateResult);
 
                 while (running) {
                     running = platformEventLoop(platform, window);
-                    gameMainLoop(gameState, platform, window);
+                    shellMainLoop(shellState, platform, window);
                 }
             }
             else {
