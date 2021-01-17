@@ -2,9 +2,9 @@
 
 #include "platform.hpp"
 #include "shell.hpp"
+#include "vm.hpp"
 
-// int sdl2shell_run() {
-int main() {
+int sdl2shell_run() {
     auto platform_init_result = platform_init();
 
     if (result_is_success(platform_init_result)) {

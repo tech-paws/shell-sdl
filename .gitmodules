@@ -1,3 +1,0 @@
-[submodule "vm"]
-	path = vm
-	url = git@github.com:tech-paws/vm.git
