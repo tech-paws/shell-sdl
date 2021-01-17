@@ -1,73 +1,73 @@
 #include "shell.hpp"
 #include "assets.hpp"
 
-static void shellRender(Platform& platform, ShellState& shellState);
+static void shell_render(Platform& platform, ShellState& shell_state);
 
-static void shellStep(ShellState& shellState, double deltaTime);
+static void shell_step(ShellState& shell_state, double deltaTime);
 
-static void initTexture(ShellState& shellState) {
-    const Result<AssetData> testTextureResult = assetLoadData(
-        &shellState.memory.assetsBuffer,
+static void init_texture(ShellState& shell_state) {
+    const Result<AssetData> test_texture_result = asset_load_data(
+        &shell_state.memory.assets_buffer,
         AssetType::texture,
         "test.jpg"
     );
 
-    const AssetData testTexture = resultUnwrap(testTextureResult);
+    const AssetData test_texture = result_unwrap(test_texture_result);
     const Texture2DParameters params = {
-        .minFilter = true,
-        .magFilter = true,
+        .min_filter = true,
+        .mag_filter = true,
     };
-    shellState.testSpriteTexture = gapiCreateTexture2D(testTexture, params);
+    shell_state.test_sprite_texture = gapi_create_texture_2d(test_texture, params);
 }
 
-Result<ShellState> shellInit() {
-    auto shellState = ShellState();
+Result<ShellState> shell_init() {
+    auto shell_state = ShellState();
 
-    auto bufferResult = createRegionMemoryBuffer(megabytes(85));
+    auto buffer_result = create_region_memory_buffer(megabytes(85));
 
-    if (resultIsSuccess(bufferResult)) {
-        auto memoryRootBuffer = resultGetPayload(bufferResult);
+    if (result_is_success(buffer_result)) {
+        auto memory_root_buffer = result_get_payload(buffer_result);
 
-        regionMemoryBufferAddRegion(&memoryRootBuffer, &shellState.memory.assetsBuffer, megabytes(40));
-        regionMemoryBufferAddRegion(&memoryRootBuffer, &shellState.memory.frameBuffer, megabytes(10));
+        region_memory_buffer_add_region(&memory_root_buffer, &shell_state.memory.assets_buffer, megabytes(40));
+        region_memory_buffer_add_region(&memory_root_buffer, &shell_state.memory.frame_buffer, megabytes(10));
 
-        initTexture(shellState);
+        init_texture(shell_state);
 
-        return resultCreateSuccess(shellState);
+        return result_create_success(shell_state);
     } else {
-        return switchError<ShellState>(bufferResult);
+        return switch_error<ShellState>(buffer_result);
     }
 }
 
-void shellMainLoop(ShellState& shellState, Platform& platform, Window window) {
-    FrameInfo& frameInfo = shellState.frameInfo;
-    frameInfo.currentTime = platformGetTicks();
-    frameInfo.deltaTime = frameInfo.lastTime - frameInfo.currentTime;
+void shell_main_loop(ShellState& shell_state, Platform& platform, Window window) {
+    FrameInfo& frame_info = shell_state.frame_info;
+    frame_info.current_time = platform_get_ticks();
+    frame_info.delta_time = frame_info.last_time - frame_info.current_time;
 
-    if (frameInfo.currentTime >= frameInfo.lastTime + PART_TIME) {
-        shellStep(shellState, frameInfo.deltaTime);
-        shellRender(platform, shellState);
-        frameInfo.frames += 1;
-        frameInfo.lastTime = frameInfo.currentTime;
-        gapiSwapWindow(platform, window);
+    if (frame_info.current_time >= frame_info.last_time + PART_TIME) {
+        shell_step(shell_state, frame_info.delta_time);
+        shell_render(platform, shell_state);
+        frame_info.frames += 1;
+        frame_info.last_time = frame_info.current_time;
+        gapi_swap_window(platform, window);
     }
 
-    if (frameInfo.currentTime >= frameInfo.frameTime + 1000.0) {
-        frameInfo.frameTime = frameInfo.currentTime;
-        frameInfo.fps = frameInfo.frames;
-        frameInfo.frames = 1;
+    if (frame_info.current_time >= frame_info.frame_time + 1000.0) {
+        frame_info.frame_time = frame_info.current_time;
+        frame_info.fps = frame_info.frames;
+        frame_info.frames = 1;
 
-        printf("FPS: %d\n", frameInfo.fps);
+        printf("FPS: %d\n", frame_info.fps);
     }
 }
 
-static void shellRender(Platform& platform, ShellState& shellState) {
-    gapiClear(0.0f, 0.0f, 0.0f);
-    gapiRender2(platform.gapi);
+static void shell_render(Platform& platform, ShellState& shell_state) {
+    gapi_clear(0.0f, 0.0f, 0.0f);
+    // gapi_render2(platform.gapi);
 }
 
-static void shellStep(ShellState& shellState, double deltaTime) {
+static void shell_step(ShellState& shell_state, double delta_time) {
 }
 
-void shellShutdown() {
+void shell_shutdown() {
 }

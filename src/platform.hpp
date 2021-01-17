@@ -14,23 +14,23 @@ struct Window;
 
 #include "primitives.hpp"
 
-Result<Platform> platformInit();
+Result<Platform> platform_init();
 
-Result<Window> platformCreateWindow(Platform& platform);
+Result<Window> platform_create_window(Platform& platform);
 
-bool platformEventLoop(Platform& platform, Window& window);
+bool platform_event_loop(Platform& platform, Window& window);
 
-float platformGetTicks();
+float platform_get_ticks();
 
-void platformSwapWindow(Platform& platform, Window& window);
+void platform_swap_window(Platform& platform, Window& window);
 
-void platformDestroyWindow(Window& window);
+void platform_destroy_window(Window& window);
 
-void platformShutdown(Platform& platform);
+void platform_shutdown(Platform& platform);
 
-u8* platformAlloc(MemoryIndex size);
+u8* platform_alloc(MemoryIndex size);
 
-const char platformPrefferedPathSeparator =
+const char platform_preffered_path_separator =
 #ifdef _WIN32
     '\\';
 #else
@@ -38,13 +38,13 @@ const char platformPrefferedPathSeparator =
 #endif
 
 template<typename... Args>
-void platformBuildPath(char* dst, Args... args) {
+void platform_build_path(char* dst, Args... args) {
     size_t offset = 0;
 
     for(const auto arg : {args...}) {
         strcpy(&dst[offset], arg);
         offset += strlen(arg) + 1; // NOTE(sysint64): +1 for separator
-        dst[offset - 1] = platformPrefferedPathSeparator;
+        dst[offset - 1] = platform_preffered_path_separator;
     }
 
     if (offset > 0) {

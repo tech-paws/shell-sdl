@@ -53,29 +53,29 @@ struct String {
 
 template<typename T, typename E = GeneralError>
 struct Result {
-    ResultCase resultCase;
+    ResultCase result_case;
     T payload;
     E error;
 };
 
 template<typename T, typename E = GeneralError>
-inline Result<T> resultCreateError(const E error) {
+inline Result<T> result_create_error(const E error) {
     Result<T> result;
-    result.resultCase = ResultCase::error;
+    result.result_case = ResultCase::error;
     result.error = error;
     return result;
 }
 
 template<typename T>
-inline Result<T> resultCreateGeneralError(const ErrorCode errorCode, const char* errorMessage = "") {
+inline Result<T> result_create_general_error(const ErrorCode errorCode, const char* errorMessage = "") {
     GeneralError error;
     error.code = errorCode;
     strncpy(error.message, errorMessage, 100);
-    return resultCreateError<T>(error);
+    return result_create_error<T>(error);
 }
 
 template<typename T, typename... Args>
-inline Result<T> resultCreateGeneralError(
+inline Result<T> result_create_general_error(
     const ErrorCode errorCode,
     const char* fmt,
     Args... args
@@ -83,46 +83,46 @@ inline Result<T> resultCreateGeneralError(
     GeneralError error;
     error.code = errorCode;
     sprintf(&error.message[0], fmt, args...);
-    return resultCreateError<T>(error);
+    return result_create_error<T>(error);
 }
 
 template<typename T>
-inline Result<T> resultCreateSuccess(T payload) {
+inline Result<T> result_create_success(T payload) {
     Result<T> result;
-    result.resultCase = ResultCase::success;
+    result.result_case = ResultCase::success;
     result.payload = payload;
     return result;
 }
 
 template<typename T>
-inline bool resultHasError(Result<T> result) {
-    return result.resultCase == ResultCase::error;
+inline bool result_has_error(Result<T> result) {
+    return result.result_case == ResultCase::error;
 }
 
 template<typename T>
-inline bool resultIsSuccess(Result<T> result) {
-    return result.resultCase == ResultCase::success;
+inline bool result_is_success(Result<T> result) {
+    return result.result_case == ResultCase::success;
 }
 
 template<typename T, typename R>
-inline Result<T> switchError(Result<R> result) {
-    return resultCreateError<T>(result.error);
+inline Result<T> switch_error(Result<R> result) {
+    return result_create_error<T>(result.error);
 }
 
 template<typename E, typename T, typename EIN>
-inline Result<T, E> mapError(Result<T, EIN> result) {
-    return resultCreateError<T>(result.error);
+inline Result<T, E> map_error(Result<T, EIN> result) {
+    return result_create_error<T>(result.error);
 }
 
 template<typename T>
-inline T resultGetPayload(Result<T> result) {
-    assert(result.resultCase == ResultCase::success);
+inline T result_get_payload(Result<T> result) {
+    assert(result.result_case == ResultCase::success);
     return result.payload;
 }
 
 template<typename T>
-inline T resultUnwrap(Result<T> result) {
-    if (result.resultCase != ResultCase::success) {
+inline T result_unwrap(Result<T> result) {
+    if (result.result_case != ResultCase::success) {
         // TODO(sysint64): Log
         puts(result.error.message);
         exit(EXIT_FAILURE);

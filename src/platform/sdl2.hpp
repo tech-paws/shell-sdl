@@ -8,6 +8,6 @@ struct Platform {
 };
 
 struct Window {
-    SDL_Window* sdlWindow;
-    GApiContext gapiContext;
+    SDL_Window* sdl_window;
+    GApiContext gapi_context;
 };

@@ -1,19 +1,19 @@
 #include "platform/sdl2.hpp"
 
-Result<Platform> platformInit() {
+Result<Platform> platform_init() {
     // Init
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {
-        return resultCreateGeneralError<Platform>(
+        return result_create_general_error<Platform>(
             ErrorCode::PlatformInit,
             SDL_GetError()
         );
     }
 
-    return resultCreateSuccess(Platform());
+    return result_create_success(Platform());
 }
 
-Result<Window> platformCreateWindow(Platform& platform) {
-    auto sdlWindow = SDL_CreateWindow(
+Result<Window> platform_create_window(Platform& platform) {
+    auto sdl_window = SDL_CreateWindow(
         "Game", // TODO(sysint64): rm hardcode
         SDL_WINDOWPOS_CENTERED,
         SDL_WINDOWPOS_CENTERED,
@@ -22,36 +22,36 @@ Result<Window> platformCreateWindow(Platform& platform) {
         SDL_WINDOW_OPENGL
     );
 
-    if (sdlWindow == nullptr) {
-        return resultCreateGeneralError<Window>(
+    if (sdl_window == nullptr) {
+        return result_create_general_error<Window>(
             ErrorCode::CreateWindow,
             SDL_GetError()
         );
     }
 
     Window window = {
-        .sdlWindow = sdlWindow
+        .sdl_window = sdl_window
     };
 
-    auto createContextResult = gapiCreateContext(platform, window);
+    auto create_context_result = gapi_create_context(platform, window);
 
-    if (resultHasError(createContextResult)) {
-        return switchError<Window>(createContextResult);
+    if (result_has_error(create_context_result)) {
+        return switch_error<Window>(create_context_result);
     }
 
-    window.gapiContext = resultGetPayload(createContextResult);
+    window.gapi_context = result_get_payload(create_context_result);
 
-    auto initGapiResult = gapiInit();
+    auto init_gapi_result = gapi_init();
 
-    if (resultHasError(initGapiResult)) {
-        return switchError<Window>(initGapiResult);
+    if (result_has_error(init_gapi_result)) {
+        return switch_error<Window>(init_gapi_result);
     }
 
-    platform.gapi = resultGetPayload(initGapiResult);
-    return resultCreateSuccess(window);
+    platform.gapi = result_get_payload(init_gapi_result);
+    return result_create_success(window);
 }
 
-bool platformEventLoop(Platform& platform, Window& window) {
+bool platform_event_loop(Platform& platform, Window& window) {
     SDL_Event event;
 
     while (SDL_PollEvent(&event)) {
@@ -63,19 +63,19 @@ bool platformEventLoop(Platform& platform, Window& window) {
     return true;
 }
 
-float platformGetTicks() {
+float platform_get_ticks() {
     return SDL_GetTicks();
 }
 
-void platformSwapWindow(Platform& platform, Window& window) {
-    SDL_GL_SwapWindow(window.sdlWindow);
+void platform_swap_window(Platform& platform, Window& window) {
+    SDL_GL_SwapWindow(window.sdl_window);
 }
 
-void platformShutdown(Platform& platform) {
+void platform_shutdown(Platform& platform) {
     SDL_Quit();
 }
 
-void platformDestroyWindow(Window& window) {
-    gapiShutdown(window.gapiContext);
-    SDL_DestroyWindow(window.sdlWindow);
+void platform_destroy_window(Window& window) {
+    gapi_shutdown(window.gapi_context);
+    SDL_DestroyWindow(window.sdl_window);
 }

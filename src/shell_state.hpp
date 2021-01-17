@@ -6,26 +6,26 @@
 #include "shell_memory.hpp"
 
 struct FrameInfo {
-    float currentTime = 0.f;
-    float lastTime = 0.f;
-    float deltaTime = 0.f;
-    float frameTime = 0.f;
+    float current_time = 0.f;
+    float last_time = 0.f;
+    float delta_time = 0.f;
+    float frame_time = 0.f;
     int frames = 0;
     int fps = 0;
 };
 
 struct ShellState {
-    FrameInfo frameInfo;
+    FrameInfo frame_info;
     ShellMemory memory;
 
-    Transforms2D testSpriteTransforms;
-    glm::mat4 testSpriteModelMatrix;
-    glm::mat4 testSpriteMVPMatrix;
-    Texture2D testSpriteTexture;
+    Transforms2D test_sprite_transforms;
+    glm::mat4 test_sprite_model_matrix;
+    glm::mat4 test_sprite_mvp_matrix;
+    Texture2D test_sprite_texture;
 
-    CameraMatrices cameraMatrices;
-    OthroCameraTransforms cameraTransform = {
-        .viewportSize = glm::vec2(1024, 768),
+    CameraMatrices camera_matrices;
+    OthroCameraTransforms camera_transform = {
+        .viewport_size = glm::vec2(1024, 768),
         .position = glm::vec2(0, 0),
         .zoom = 1.f
     };

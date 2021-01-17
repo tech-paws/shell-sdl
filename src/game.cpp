@@ -1,90 +1,90 @@
 #include "game.hpp"
 #include "assets.hpp"
 
-static void gameRender(Platform& platform, GameState& gameState);
+static void game_render(Platform& platform, GameState& game_state);
 
-static void gameStep(GameState& gameState, double deltaTime);
+static void game_step(GameState& game_state, double deltaTime);
 
-static void initTexture(GameState& gameState) {
-    const Result<AssetData> testTextureResult = assetLoadData(
-        &gameState.memory.assetsBuffer,
+static void init_texture(GameState& game_state) {
+    const Result<AssetData> test_texture_result = asset_load_data(
+        &game_state.memory.assets_buffer,
         AssetType::texture,
         "test.jpg"
     );
 
-    const AssetData testTexture = resultUnwrap(testTextureResult);
+    const AssetData testTexture = result_unwrap(test_texture_result);
     const Texture2DParameters params = {
-        .minFilter = true,
-        .magFilter = true,
+        .min_filter = true,
+        .mag_filter = true,
     };
-    gameState.testSpriteTexture = gapiCreateTexture2D(testTexture, params);
+    game_state.test_sprite_texture = gapi_create_texture_2d(testTexture, params);
 }
 
-Result<GameState> gameInit() {
-    auto gameState = GameState();
+Result<GameState> game_init() {
+    auto game_state = GameState();
 
-    auto bufferResult = createRegionMemoryBuffer(megabytes(85));
+    auto buffer_result = create_region_memory_buffer(megabytes(85));
 
-    if (resultIsSuccess(bufferResult)) {
-        auto memoryRootBuffer = resultGetPayload(bufferResult);
+    if (result_is_success(buffer_result)) {
+        auto memory_root_buffer = result_get_payload(buffer_result);
 
-        regionMemoryBufferAddRegion(&memoryRootBuffer, &gameState.memory.gapiCommandsBuffer, megabytes(10));
-        regionMemoryBufferAddRegion(&memoryRootBuffer, &gameState.memory.gapiCommandsDataBuffer, megabytes(10));
-        regionMemoryBufferAddRegion(&memoryRootBuffer, &gameState.memory.assetsBuffer, megabytes(40));
-        regionMemoryBufferAddRegion(&memoryRootBuffer, &gameState.memory.frameBuffer, megabytes(10));
+        region_memory_buffer_add_region(&memory_root_buffer, &game_state.memory.gapi_commands_buffer, megabytes(10));
+        region_memory_buffer_add_region(&memory_root_buffer, &game_state.memory.gapi_commands_data_buffer, megabytes(10));
+        region_memory_buffer_add_region(&memory_root_buffer, &game_state.memory.assets_buffer, megabytes(40));
+        region_memory_buffer_add_region(&memory_root_buffer, &game_state.memory.frame_buffer, megabytes(10));
 
-        initTexture(gameState);
+        init_texture(game_state);
 
-        return resultCreateSuccess(gameState);
+        return result_create_success(game_state);
     } else {
-        return switchError<GameState>(bufferResult);
+        return switch_error<GameState>(buffer_result);
     }
 }
 
-void gameMainLoop(GameState& gameState, Platform& platform, Window window) {
-    FrameInfo& frameInfo = gameState.frameInfo;
-    frameInfo.currentTime = platformGetTicks();
-    frameInfo.deltaTime = frameInfo.lastTime - frameInfo.currentTime;
+void game_main_loop(GameState& game_state, Platform& platform, Window window) {
+    FrameInfo& frame_info = game_state.frame_info;
+    frame_info.current_time = platform_get_ticks();
+    frame_info.delta_time = frame_info.last_time - frame_info.current_time;
 
-    if (frameInfo.currentTime >= frameInfo.lastTime + PART_TIME) {
-        gameStep(gameState, frameInfo.deltaTime);
-        gameRender(platform, gameState);
-        frameInfo.frames += 1;
-        frameInfo.lastTime = frameInfo.currentTime;
-        gapiSwapWindow(platform, window);
+    if (frame_info.current_time >= frame_info.last_time + PART_TIME) {
+        game_step(game_state, frame_info.delta_time);
+        game_render(platform, game_state);
+        frame_info.frames += 1;
+        frame_info.last_time = frame_info.current_time;
+        gapi_swap_window(platform, window);
     }
 
-    if (frameInfo.currentTime >= frameInfo.frameTime + 1000.0) {
-        frameInfo.frameTime = frameInfo.currentTime;
-        frameInfo.fps = frameInfo.frames;
-        frameInfo.frames = 1;
+    if (frame_info.current_time >= frame_info.frame_time + 1000.0) {
+        frame_info.frame_time = frame_info.current_time;
+        frame_info.fps = frame_info.frames;
+        frame_info.frames = 1;
 
-        printf("FPS: %d\n", frameInfo.fps);
+        printf("FPS: %d\n", frame_info.fps);
     }
 }
 
-static void gameRender(Platform& platform, GameState& gameState) {
-    gapiClear(0.0f, 0.0f, 0.0f);
+static void game_render(Platform& platform, GameState& game_state) {
+    gapi_clear(0.0f, 0.0f, 0.0f);
 
-    // gapiSetColorPipeline(gameState.memory, glm::vec4(1, 0, 0, 1));
-    gapiSetTexturePipeline(gameState.memory, gameState.testSpriteTexture.id);
+    // gapi_set_color_pipeline(game_state.memory, glm::vec4(1, 0, 0, 1));
+    gapi_set_texture_pipeline(game_state.memory, game_state.test_sprite_texture.id);
 
-    drawCenteredQuads(gameState.memory, &gameState.testSpriteMVPMatrix, 1);
-    gapiRender(platform.gapi, gameState.memory);
+    draw_centered_quads(game_state.memory, &game_state.test_sprite_mvp_matrix, 1);
+    gapi_render(platform.gapi, game_state.memory);
 }
 
-static void gameStep(GameState& gameState, double deltaTime) {
-    gameState.cameraMatrices = transformsCreateOrthoCameraMatrices(gameState.cameraTransform);
+static void game_step(GameState& game_state, double delta_time) {
+    game_state.camera_matrices = transforms_create_ortho_camera_matrices(game_state.camera_transforms);
 
-    gameState.testSpriteTransforms.position = glm::vec2(
-        gameState.cameraTransform.viewportSize.x / 2.f,
-        gameState.cameraTransform.viewportSize.y / 2.f
+    game_state.test_sprite_transforms.position = glm::vec2(
+        game_state.camera_transforms.viewport_size.x / 2.f,
+        game_state.camera_transforms.viewport_size.y / 2.f
     );
-    gameState.testSpriteTransforms.scaling = glm::vec2(430.0f, 600.0f);
-    gameState.testSpriteTransforms.rotation += (0.25f/1000.f) * deltaTime;
+    game_state.test_sprite_transforms.scaling = glm::vec2(430.0f, 600.0f);
+    game_state.test_sprite_transforms.rotation += (0.25f/1000.f) * delta_time;
 
-    gameState.testSpriteModelMatrix = transformsCreate2DModelMatrix(gameState.testSpriteTransforms);
-    gameState.testSpriteMVPMatrix = gameState.cameraMatrices.mvpMatrix * gameState.testSpriteModelMatrix;
+    game_state.test_sprite_model_matrix = transforms_create_2d_model_matrix(game_state.test_sprite_transforms);
+    game_state.test_sprite_mvp_matrix = game_state.camera_matrices.mvp_matrix * game_state.test_sprite_model_matrix;
 }
 
 void gameShutdown() {

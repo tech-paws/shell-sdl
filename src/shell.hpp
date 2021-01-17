@@ -7,8 +7,8 @@
 
 static const float PART_TIME = 1000.f / 60.f;
 
-Result<ShellState> shellInit();
+Result<ShellState> shell_init();
 
-void shellMainLoop(ShellState& shellState, Platform& platform, Window window);
+void shell_main_loop(ShellState& shell_state, Platform& platform, Window window);
 
-void shellShutdown();
+void shell_shutdown();

@@ -26,30 +26,30 @@ struct ArenaMemoryBuffer {
 };
 
 // API
-Result<RegionMemoryBuffer> createRegionMemoryBuffer(u64 size);
+Result<RegionMemoryBuffer> create_region_memory_buffer(u64 size);
 
-Result<StackMemoryBuffer> createStackMemoryBuffer(RegionMemoryBuffer* root, u64 size);
+Result<StackMemoryBuffer> create_stack_memory_buffer(RegionMemoryBuffer* root, u64 size);
 
-Result<ArenaMemoryBuffer> createArenaMemoryBuffer(RegionMemoryBuffer* root, u64 size, u64 chunkSize);
+Result<ArenaMemoryBuffer> create_arena_memory_buffer(RegionMemoryBuffer* root, u64 size, u64 chunkSize);
 
-void regionMemoryBufferAddRegion(RegionMemoryBuffer* where, RegionMemoryBuffer* buffer, u64 size);
+void region_memory_buffer_add_region(RegionMemoryBuffer* where, RegionMemoryBuffer* buffer, u64 size);
 
-Result<u8*> regionMemoryBufferAlloc(RegionMemoryBuffer* buffer, u64 size);
+Result<u8*> region_memory_buffer_alloc(RegionMemoryBuffer* buffer, u64 size);
 
-void regionMemoryBufferFree(RegionMemoryBuffer* buffer);
+void region_memory_buffer_free(RegionMemoryBuffer* buffer);
 
-Result<Arena*> arenaMemoryBufferAlloc(ArenaMemoryBuffer* buffer);
+Result<Arena*> arena_memory_buffer_alloc(ArenaMemoryBuffer* buffer);
 
-void arenaMemoryBufferFree(ArenaMemoryBuffer* buffer, Arena* arena);
+void arena_memory_buffer_free(ArenaMemoryBuffer* buffer, Arena* arena);
 
-Result<bool> initMemory();
+Result<bool> init_memory();
 
 template<typename T>
-Result<u8*> regionMemoryPushStruct(RegionMemoryBuffer* buffer, T data) {
-    auto dataResult = regionMemoryBufferAlloc(buffer, sizeof(T));
+Result<u8*> region_memory_push_struct(RegionMemoryBuffer* buffer, T data) {
+    auto dataResult = region_memory_buffer_alloc(buffer, sizeof(T));
 
-    if (resultIsSuccess(dataResult)) {
-        auto base = resultGetPayload(dataResult);
+    if (result_is_success(dataResult)) {
+        auto base = result_get_payload(dataResult);
         memcpy(base, &data, sizeof(T));
     }
 
@@ -57,11 +57,11 @@ Result<u8*> regionMemoryPushStruct(RegionMemoryBuffer* buffer, T data) {
 }
 
 template<typename T>
-Result<u8*> regionMemoryPushChunk(RegionMemoryBuffer* buffer, T* data, size_t len) {
-    auto dataResult = regionMemoryBufferAlloc(buffer, sizeof(T) * len);
+Result<u8*> region_memory_push_chunk(RegionMemoryBuffer* buffer, T* data, size_t len) {
+    auto dataResult = region_memory_buffer_alloc(buffer, sizeof(T) * len);
 
-    if (resultIsSuccess(dataResult)) {
-        auto base = resultGetPayload(dataResult);
+    if (result_is_success(dataResult)) {
+        auto base = result_get_payload(dataResult);
         memcpy(base, data, sizeof(T) * len);
     }
 

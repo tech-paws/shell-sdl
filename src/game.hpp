@@ -7,10 +7,10 @@
 
 static const float PART_TIME = 1000.f / 60.f;
 
-Result<GameState> gameInit();
+Result<GameState> game_init();
 
-void gameMainLoop(GameState& gameState, Platform& platform, Window window);
+void game_main_loop(GameState& game_state, Platform& platform, Window window);
 
-void gameShutdown();
+void game_shutdown();
 
 #include "gapi/commands.hpp"

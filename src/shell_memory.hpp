@@ -3,7 +3,7 @@
 #include "memory.hpp"
 
 struct ShellMemory {
-    RegionMemoryBuffer rootBuffer;
-    RegionMemoryBuffer assetsBuffer;
-    RegionMemoryBuffer frameBuffer;
+    RegionMemoryBuffer root_buffer;
+    RegionMemoryBuffer assets_buffer;
+    RegionMemoryBuffer frame_buffer;
 };

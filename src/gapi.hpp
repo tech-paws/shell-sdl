@@ -24,26 +24,24 @@ struct GApiContext;
 struct Texture2D;
 
 struct Texture2DParameters {
-    bool wrapS;
-    bool wrapT;
-    bool minFilter;
-    bool magFilter;
+    bool wrap_s;
+    bool wrap_t;
+    bool min_filter;
+    bool mag_filter;
 };
 
-Result<GApi> gapiInit();
+Result<GApi> gapi_init();
 
-Result<GApiContext> gapiCreateContext(Platform& platform, Window window);
+Result<GApiContext> gapi_create_context(Platform& platform, Window window);
 
-void gapiSwapWindow(Platform& platform, Window window);
+void gapi_swap_window(Platform& platform, Window window);
 
-void gapiShutdown(GApiContext context);
+void gapi_shutdown(GApiContext context);
 
-void gapiClear(float r, float g, float b);
+void gapi_clear(float r, float g, float b);
 
-void gapiRender(GApi& gapi, GameMemory& memory);
+void gapi_render(GApi& gapi, GameMemory& memory);
 
-void gapiRender2(GApi& gapi);
+Texture2D gapi_create_texture_2d(AssetData data, Texture2DParameters params);
 
-Texture2D gapiCreateTexture2D(AssetData data, Texture2DParameters params);
-
-void gapiDeleteTexture2D(Texture2D texture);
+void gapi_delete_texture_2d(Texture2D texture);

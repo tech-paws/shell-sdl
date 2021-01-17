@@ -3,9 +3,9 @@
 #include "memory.hpp"
 
 struct GameMemory {
-    RegionMemoryBuffer gapiCommandsBuffer;
-    RegionMemoryBuffer gapiCommandsDataBuffer;
-    RegionMemoryBuffer rootBuffer;
-    RegionMemoryBuffer assetsBuffer;
-    RegionMemoryBuffer frameBuffer;
+    RegionMemoryBuffer gapi_commands_buffer;
+    RegionMemoryBuffer gapi_commands_data_buffer;
+    RegionMemoryBuffer root_buffer;
+    RegionMemoryBuffer assets_buffer;
+    RegionMemoryBuffer frame_buffer;
 };

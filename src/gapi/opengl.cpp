@@ -6,33 +6,33 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-const size_t quadVerticesCount = 4;
-const glm::vec2 centeredQuadVertices[quadVerticesCount] = {
+const size_t quad_vertices_count = 4;
+const glm::vec2 centered_quad_vertices[quad_vertices_count] = {
     glm::vec2(-0.5f, -0.5f),
     glm::vec2( 0.5f, -0.5f),
     glm::vec2( 0.5f,  0.5f),
     glm::vec2(-0.5f,  0.5f),
 };
 
-const glm::vec2 quadVertices[quadVerticesCount] = {
+const glm::vec2 quad_vertices[quad_vertices_count] = {
     glm::vec2(0.0f, 0.0f),
     glm::vec2(1.0f, 0.0f),
     glm::vec2(1.0f, 1.0f),
     glm::vec2(0.0f, 1.0f),
 };
 
-const size_t quadIndicesCount = 4;
-const u32 quadIndices[quadIndicesCount] = { 0, 3, 1, 2 };
+const size_t quad_indices_count = 4;
+const u32 quad_indices[quad_indices_count] = { 0, 3, 1, 2 };
 
-const size_t quadTexCoordsCount = 4;
-const glm::vec2 quadTexCoords[quadTexCoordsCount] = {
+const size_t quad_tex_coords_count = 4;
+const glm::vec2 quad_tex_coords[quad_tex_coords_count] = {
     glm::vec2(0.0f, 1.0f),
     glm::vec2(1.0f, 1.0f),
     glm::vec2(1.0f, 0.0f),
     glm::vec2(0.0f, 0.0f),
 };
 
-static Result<GLint> checkShaderStatus(const Shader shader, const GLenum pname) {
+static Result<GLint> check_shader_status(const Shader shader, const GLenum pname) {
     GLint status, length;
     GLchar message[1024] { 0 };
 
@@ -52,52 +52,52 @@ static Result<GLint> checkShaderStatus(const Shader shader, const GLenum pname) 
                 break;
         }
 
-        return resultCreateGeneralError<GLint>(
+        return result_create_general_error<GLint>(
             ErrorCode::GApiShaderStatus,
             "%s. shader name: '%s', status: %d, message: '%s'",
             reason, shader.name, status, message
         );
     }
 
-    return resultCreateSuccess(status);
+    return result_create_success(status);
 }
 
-static Result<Shader> gapiCreateShader(const char* name, const ShaderType shaderType, AssetData data) {
+static Result<Shader> gapi_create_shader(const char* name, const ShaderType shader_type, AssetData data) {
     Shader shader;
     shader.name = name;
-    GLenum glShaderType;
+    GLenum gl_shader_type;
 
-    switch (shaderType) {
+    switch (shader_type) {
         case ShaderType::fragment:
-            glShaderType = GL_FRAGMENT_SHADER;
+            gl_shader_type = GL_FRAGMENT_SHADER;
             break;
 
         case ShaderType::vertex:
-            glShaderType = GL_VERTEX_SHADER;
+            gl_shader_type = GL_VERTEX_SHADER;
             break;
 
         default:
-            return resultCreateGeneralError<Shader>(
+            return result_create_general_error<Shader>(
                 ErrorCode::GApiCreateShader,
-                "Unknown shader type %d", shaderType
+                "Unknown shader type %d", shader_type
             );
     }
 
-    shader.id = glCreateShader(glShaderType);
+    shader.id = glCreateShader(gl_shader_type);
 
     char* source = (char*) data.data;
     glShaderSource(shader.id, 1, &source, nullptr);
     glCompileShader(shader.id);
-    const auto statusReault = checkShaderStatus(shader, GL_COMPILE_STATUS);
+    const auto status_reault = check_shader_status(shader, GL_COMPILE_STATUS);
 
-    if (resultHasError(statusReault)) {
-        return switchError<Shader>(statusReault);
+    if (result_has_error(status_reault)) {
+        return switch_error<Shader>(status_reault);
     }
 
-    return resultCreateSuccess(shader);
+    return result_create_success(shader);
 }
 
-static Result<GLint> checkProgramStatus(const ShaderProgram program, const GLenum pname) {
+static Result<GLint> check_program_status(const ShaderProgram program, const GLenum pname) {
     GLint status, length;
     GLchar message[1024] { 0 };
 
@@ -120,17 +120,17 @@ static Result<GLint> checkProgramStatus(const ShaderProgram program, const GLenu
                 reason = "Failed";
         }
 
-        return resultCreateGeneralError<GLint>(
+        return result_create_general_error<GLint>(
             ErrorCode::GApiShaderProgramStatus,
             "%s. program name: '%s', status: %d, message: '%s'",
             reason, program.name, status, message
         );
     }
 
-    return resultCreateSuccess(status);
+    return result_create_success(status);
 }
 
-static Result<ShaderProgram> gapiCreateShaderProgram(const char* name, Shader* shaders, u64 count) {
+static Result<ShaderProgram> gapi_create_shader_program(const char* name, Shader* shaders, u64 count) {
     ShaderProgram program;
 
     program.id = glCreateProgram();
@@ -138,39 +138,38 @@ static Result<ShaderProgram> gapiCreateShaderProgram(const char* name, Shader* s
 
     for (size_t i = 0; i < count; i += 1) {
         glAttachShader(program.id, shaders[i].id);
-        puts(shaders[i].name);
     }
 
     glLinkProgram(program.id);
-    const auto statusReault = checkProgramStatus(program, GL_LINK_STATUS);
+    const auto status_reault = check_program_status(program, GL_LINK_STATUS);
 
-    if (resultHasError(statusReault)) {
-        return switchError<ShaderProgram>(statusReault);
+    if (result_has_error(status_reault)) {
+        return switch_error<ShaderProgram>(status_reault);
     }
 
-    return resultCreateSuccess(program);
+    return result_create_success(program);
 }
 
-static Result<u32> gapiGetShaderUniformLocation(const ShaderProgram program, const char* location) {
+static Result<u32> gapi_get_shader_uniform_location(const ShaderProgram program, const char* location) {
     const GLint loc = glGetUniformLocation(program.id, location);
 
     if (loc == -1) {
-        return resultCreateGeneralError<u32>(
+        return result_create_general_error<u32>(
             ErrorCode::GApiShaderUniformLocation,
             "Failed to get uniform location. name '%s', location: %s",
             program.name, location
         );
     }
     else {
-        return resultCreateSuccess((u32) loc);
+        return result_create_success((u32) loc);
     }
 }
 
-static void createBuffer(GLuint* buffer, const void* data, size_t size, bool isDynamic) {
+static void create_buffer(GLuint* buffer, const void* data, size_t size, bool is_dynamic) {
     glGenBuffers(1, buffer);
     glBindBuffer(GL_ARRAY_BUFFER, *buffer);
 
-    if (isDynamic) {
+    if (is_dynamic) {
         glBufferData(GL_ARRAY_BUFFER, size, data, GL_STATIC_DRAW);
     } else {
         glBufferData(GL_ARRAY_BUFFER, size, nullptr, GL_STREAM_DRAW);
@@ -178,58 +177,58 @@ static void createBuffer(GLuint* buffer, const void* data, size_t size, bool isD
     }
 }
 
-static void gapiCreateVector2fVAO(GLuint buffer, u32 location) {
+static void gapi_create_vector2f_vao(GLuint buffer, u32 location) {
     glBindBuffer(GL_ARRAY_BUFFER, buffer);
     glEnableVertexAttribArray(location);
     glVertexAttribPointer(location, 2, GL_FLOAT, GL_FALSE, 0, nullptr);
 }
 
-static void initCenteredQuad(GApi& gapi) {
-    createBuffer(&gapi.quadIndicesBuffer, &quadIndices[0], sizeof(u32) * quadIndicesCount, false);
-    createBuffer(&gapi.quadVerticesBuffer, &quadVertices[0], sizeof(f32) * 2 * quadVerticesCount, false);
-    createBuffer(&gapi.quadTexCoordsBuffer, &quadTexCoords[0], sizeof(f32) * 2 * quadTexCoordsCount, false);
-    glGenVertexArrays(1, &gapi.quadVao);
+static void init_centered_quad(GApi& gapi) {
+    create_buffer(&gapi.quad_indices_buffer, &quad_indices[0], sizeof(u32) * quad_indices_count, false);
+    create_buffer(&gapi.quad_vertices_buffer, &quad_vertices[0], sizeof(f32) * 2 * quad_vertices_count, false);
+    create_buffer(&gapi.quad_tex_coords_buffer, &quad_tex_coords[0], sizeof(f32) * 2 * quad_tex_coords_count, false);
+    glGenVertexArrays(1, &gapi.quad_vao);
 
-    glBindVertexArray(gapi.quadVao);
-    gapiCreateVector2fVAO(gapi.quadVerticesBuffer, 0);
-    gapiCreateVector2fVAO(gapi.quadTexCoordsBuffer, 1);
+    glBindVertexArray(gapi.quad_vao);
+    gapi_create_vector2f_vao(gapi.quad_vertices_buffer, 0);
+    gapi_create_vector2f_vao(gapi.quad_tex_coords_buffer, 1);
 }
 
-static void initQuad(GApi& gapi) {
-    createBuffer(&gapi.centeredQuadIndicesBuffer, &quadIndices[0], sizeof(u32) * quadIndicesCount, false);
-    createBuffer(&gapi.centeredQuadVerticesBuffer, &centeredQuadVertices[0], sizeof(f32) * 2 * quadVerticesCount, false);
-    createBuffer(&gapi.centeredQuadTexCoordsBuffer, &quadTexCoords[0], sizeof(f32) * 2 * quadTexCoordsCount, false);
-    glGenVertexArrays(1, &gapi.centeredQuadVao);
+static void init_quad(GApi& gapi) {
+    create_buffer(&gapi.centered_quad_indices_buffer, &quad_indices[0], sizeof(u32) * quad_indices_count, false);
+    create_buffer(&gapi.centered_quad_vertices_buffer, &centered_quad_vertices[0], sizeof(f32) * 2 * quad_vertices_count, false);
+    create_buffer(&gapi.centered_quad_tex_coords_buffer, &quad_tex_coords[0], sizeof(f32) * 2 * quad_tex_coords_count, false);
+    glGenVertexArrays(1, &gapi.centered_quad_vao);
 
-    glBindVertexArray(gapi.centeredQuadVao);
-    gapiCreateVector2fVAO(gapi.centeredQuadVerticesBuffer, 0);
-    gapiCreateVector2fVAO(gapi.centeredQuadTexCoordsBuffer, 1);
+    glBindVertexArray(gapi.centered_quad_vao);
+    gapi_create_vector2f_vao(gapi.centered_quad_vertices_buffer, 0);
+    gapi_create_vector2f_vao(gapi.centered_quad_tex_coords_buffer, 1);
 }
 
-static Result<bool> gapiLoadShader(GApi& gapi, size_t id, const char* name, const char* fileName, ShaderType type) {
-    const Result<AssetData> shaderAssetResult = assetLoadData(
-        &gapi.memoryShaders,
+static Result<bool> gapi_load_shader(GApi& gapi, size_t id, const char* name, const char* file_name, ShaderType type) {
+    const Result<AssetData> shader_asset_result = asset_load_data(
+        &gapi.memory_shaders,
         AssetType::shader,
-        fileName
+        file_name
     );
 
-    if (resultHasError(shaderAssetResult)) {
-        return switchError<bool>(shaderAssetResult);
+    if (result_has_error(shader_asset_result)) {
+        return switch_error<bool>(shader_asset_result);
     }
 
-    const auto shaderAsset = resultGetPayload(shaderAssetResult);
-    const auto shaderResult = gapiCreateShader(name, type, shaderAsset);
+    const auto shader_asset = result_get_payload(shader_asset_result);
+    const auto shader_result = gapi_create_shader(name, type, shader_asset);
 
-    if (resultHasError(shaderResult)) {
-        return switchError<bool>(shaderResult);
+    if (result_has_error(shader_result)) {
+        return switch_error<bool>(shader_result);
     }
 
-    gapi.shaders[id] = resultGetPayload(shaderResult);
-    return resultCreateSuccess(true);
+    gapi.shaders[id] = result_get_payload(shader_result);
+    return result_create_success(true);
 }
 
-inline static Result<bool> initFragmentColorShader(GApi& gapi) {
-    return gapiLoadShader(
+inline static Result<bool> init_fragment_color_shader(GApi& gapi) {
+    return gapi_load_shader(
         gapi,
         GAPI_SHADER_FRAGMENT_COLOR_ID,
         "Fragment Color",
@@ -238,8 +237,8 @@ inline static Result<bool> initFragmentColorShader(GApi& gapi) {
     );
 }
 
-inline static Result<bool> initFragmentTextureShader(GApi& gapi) {
-    return gapiLoadShader(
+inline static Result<bool> init_fragment_texture_shader(GApi& gapi) {
+    return gapi_load_shader(
         gapi,
         GAPI_SHADER_FRAGMENT_TEXTURE_ID,
         "Fragment Texture",
@@ -248,8 +247,8 @@ inline static Result<bool> initFragmentTextureShader(GApi& gapi) {
     );
 }
 
-inline static Result<bool> initVertexTransformShader(GApi& gapi) {
-    return gapiLoadShader(
+inline static Result<bool> init_vertex_transform_shader(GApi& gapi) {
+    return gapi_load_shader(
         gapi,
         GAPI_SHADER_VERTEX_TRANSFORM_ID,
         "Vertex Transform",
@@ -258,77 +257,77 @@ inline static Result<bool> initVertexTransformShader(GApi& gapi) {
     );
 }
 
-static Result<bool> initShaderUniformLocation(GApi& gapi, size_t id, ShaderProgram& program, const char* location) {
-    Result<u32> locationResult;
-    locationResult = gapiGetShaderUniformLocation(program, location);
+static Result<bool> init_shader_uniform_location(GApi& gapi, size_t id, ShaderProgram& program, const char* location) {
+    Result<u32> location_result;
+    location_result = gapi_get_shader_uniform_location(program, location);
 
-    if (resultHasError(locationResult)) {
-        return switchError<bool>(locationResult);
+    if (result_has_error(location_result)) {
+        return switch_error<bool>(location_result);
     } else {
-        gapi.shaderUniformLocations[id] = resultGetPayload(locationResult);
-        return resultCreateSuccess(true);
+        gapi.shader_uniform_locations[id] = result_get_payload(location_result);
+        return result_create_success(true);
     }
 }
 
-static Result<bool> initColorShaderProgram(GApi& gapi) {
+static Result<bool> init_color_shader_program(GApi& gapi) {
     Shader shaders[2];
     shaders[0] = gapi.shaders[GAPI_SHADER_VERTEX_TRANSFORM_ID];
     shaders[1] = gapi.shaders[GAPI_SHADER_FRAGMENT_COLOR_ID];
-    const auto programResult = gapiCreateShaderProgram("Color Shader Program", &shaders[0], 2);
+    const auto program_result = gapi_create_shader_program("Color Shader Program", &shaders[0], 2);
 
-    if (resultHasError(programResult)) {
-        return switchError<bool>(programResult);
+    if (result_has_error(program_result)) {
+        return switch_error<bool>(program_result);
     }
 
-    auto program = resultGetPayload(programResult);
+    auto program = result_get_payload(program_result);
 
-    Result<bool> locationResult;
-    locationResult = initShaderUniformLocation(gapi, GAPI_SHADER_LOCATION_COLOR_SHADER_MVP_ID, program, "MVP");
+    Result<bool> location_result;
+    location_result = init_shader_uniform_location(gapi, GAPI_SHADER_LOCATION_COLOR_SHADER_MVP_ID, program, "MVP");
 
-    if (resultHasError(locationResult)) {
-        return locationResult;
+    if (result_has_error(location_result)) {
+        return location_result;
     }
 
-    locationResult = initShaderUniformLocation(gapi, GAPI_SHADER_LOCATION_COLOR_SHADER_COLOR_ID, program, "color");
+    location_result = init_shader_uniform_location(gapi, GAPI_SHADER_LOCATION_COLOR_SHADER_COLOR_ID, program, "color");
 
-    if (resultHasError(locationResult)) {
-        return locationResult;
+    if (result_has_error(location_result)) {
+        return location_result;
     }
 
-    gapi.shaderProgramColor = program;
-    return resultCreateSuccess(true);
+    gapi.shader_program_color = program;
+    return result_create_success(true);
 }
 
-static Result<bool> initTextureShaderProgram(GApi& gapi) {
+static Result<bool> init_texture_shader_program(GApi& gapi) {
     Shader shaders[2];
     shaders[0] = gapi.shaders[GAPI_SHADER_VERTEX_TRANSFORM_ID];
     shaders[1] = gapi.shaders[GAPI_SHADER_FRAGMENT_TEXTURE_ID];
-    const auto programResult = gapiCreateShaderProgram("Texture Shader Program", &shaders[0], 2);
+    const auto program_result = gapi_create_shader_program("Texture Shader Program", &shaders[0], 2);
 
-    if (resultHasError(programResult)) {
-        return switchError<bool>(programResult);
+    if (result_has_error(program_result)) {
+        return switch_error<bool>(program_result);
     }
 
-    auto program = resultGetPayload(programResult);
+    auto program = result_get_payload(program_result);
 
-    Result<bool> locationResult;
-    locationResult = initShaderUniformLocation(gapi, GAPI_SHADER_LOCATION_TEXTURE_SHADER_MVP_ID, program, "MVP");
+    Result<bool> location_result;
+    location_result = init_shader_uniform_location(gapi, GAPI_SHADER_LOCATION_TEXTURE_SHADER_MVP_ID, program, "MVP");
 
-    if (resultHasError(locationResult)) {
-        return locationResult;
+    if (result_has_error(location_result)) {
+        return location_result;
     }
 
-    locationResult = initShaderUniformLocation(gapi, GAPI_SHADER_LOCATION_TEXTURE_SHADER_TEXTURE_ID, program, "utexture");
+    location_result = init_shader_uniform_location(gapi, GAPI_SHADER_LOCATION_TEXTURE_SHADER_TEXTURE_ID, program, "utexture");
 
-    if (resultHasError(locationResult)) {
-        return locationResult;
+    if (result_has_error(location_result)) {
+        return location_result;
     }
 
-    gapi.shaderProgramTexture = program;
-    return resultCreateSuccess(true);
+    gapi.shader_program_texture = program;
+    return result_create_success(true);
 }
 
-Result<GApi> gapiInit() {
+Result<GApi> gapi_init() {
     glDisable(GL_CULL_FACE);
     glDisable(GL_MULTISAMPLE);
     glDisable(GL_DEPTH_TEST);
@@ -337,72 +336,72 @@ Result<GApi> gapiInit() {
     glClearColor(0.f, 0.f, 0.f, 0.f);
     glClear(GL_COLOR_BUFFER_BIT);
 
-    auto bufferResult = createRegionMemoryBuffer(megabytes(10));
+    auto buffer_result = create_region_memory_buffer(megabytes(10));
 
-    if (resultIsSuccess(bufferResult)) {
+    if (result_is_success(buffer_result)) {
         GApi gapi;
-        gapi.memoryShaders = resultGetPayload(bufferResult);
+        gapi.memory_shaders = result_get_payload(buffer_result);
 
-        Result<bool> initComponentResult;
+        Result<bool> init_component_result;
 
         // Geometry
-        initQuad(gapi);
-        initCenteredQuad(gapi);
+        init_quad(gapi);
+        init_centered_quad(gapi);
 
         // Shaders
-        initComponentResult = initFragmentColorShader(gapi);
+        init_component_result = init_fragment_color_shader(gapi);
 
-        if (resultHasError(initComponentResult)) {
-            return switchError<GApi>(initComponentResult);
+        if (result_has_error(init_component_result)) {
+            return switch_error<GApi>(init_component_result);
         }
 
-        initComponentResult = initFragmentTextureShader(gapi);
+        init_component_result = init_fragment_texture_shader(gapi);
 
-        if (resultHasError(initComponentResult)) {
-            return switchError<GApi>(initComponentResult);
+        if (result_has_error(init_component_result)) {
+            return switch_error<GApi>(init_component_result);
         }
 
-        initComponentResult = initVertexTransformShader(gapi);
+        init_component_result = init_vertex_transform_shader(gapi);
 
-        if (resultHasError(initComponentResult)) {
-            return switchError<GApi>(initComponentResult);
+        if (result_has_error(init_component_result)) {
+            return switch_error<GApi>(init_component_result);
         }
 
         // Programs
-        initComponentResult = initColorShaderProgram(gapi);
+        init_component_result = init_color_shader_program(gapi);
 
-        if (resultHasError(initComponentResult)) {
-            return switchError<GApi>(initComponentResult);
+        if (result_has_error(init_component_result)) {
+            return switch_error<GApi>(init_component_result);
         }
 
-        initComponentResult = initTextureShaderProgram(gapi);
+        init_component_result = init_texture_shader_program(gapi);
 
-        if (resultHasError(initComponentResult)) {
-            return switchError<GApi>(initComponentResult);
+        if (result_has_error(init_component_result)) {
+            return switch_error<GApi>(init_component_result);
         }
 
-        return resultCreateSuccess(gapi);
+        return result_create_success(gapi);
     } else {
-        return switchError<GApi>(bufferResult);
+        return switch_error<GApi>(buffer_result);
     }
 }
 
-void gapiClear(float r, float g, float b) {
+void gapi_clear(float r, float g, float b) {
     glClearColor(r, g, b, 0);
     glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 }
 
-Texture2D gapiCreateTexture2D(const AssetData data, const Texture2DParameters params) {
+Texture2D gapi_create_texture_2d(const AssetData data, const Texture2DParameters params) {
     Texture2D texture;
-    TextureHeader textureHeader = *((TextureHeader*) data.data);
-    u8* textureData = data.data + sizeof(TextureHeader);
+    TextureHeader texture_header = *((TextureHeader*) data.data);
+    u8* texture_data = data.data + sizeof(TextureHeader);
 
-    texture.width = textureHeader.width;
-    texture.height = textureHeader.height;
+    texture.width = texture_header.width;
+    texture.height = texture_header.height;
 
     GLenum format;
 
-    switch (textureHeader.format) {
+    switch (texture_header.format) {
         case TextureFormat::rgb:
             format = GL_RGB;
             break;
@@ -426,7 +425,7 @@ Texture2D gapiCreateTexture2D(const AssetData data, const Texture2DParameters pa
         /* border */ 0,
         /* format */ format,
         /* type */ GL_UNSIGNED_BYTE,
-        /* data */ textureData
+        /* data */ texture_data
     );
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -437,105 +436,102 @@ Texture2D gapiCreateTexture2D(const AssetData data, const Texture2DParameters pa
     return texture;
 }
 
-void gapiDeleteTexture2D(Texture2D texture) {
+void gapi_delete_texture_2d(Texture2D texture) {
     glDeleteTextures(1, &texture.id);
 }
 
-static void gapiSetColorPipeline(GApi& gapi, GAPICommandPayload payload) {
+static void gapi_set_color_pipeline(GApi& gapi, GAPICommandPayload payload) {
 
 #ifdef VALIDATE
-    glValidateProgram(gapi.shaderProgramColor.id);
-    const auto statusReault = checkProgramStatus(gapi.shaderProgramColor, GL_VALIDATE_STATUS);
-    resultUnwrap(statusReault);
+    glValidateProgram(gapi.shader_program_color.id);
+    const auto status_reault = check_program_status(gapi.shader_program_color, GL_VALIDATE_STATUS);
+    result_unwrap(status_reault);
 #endif
 
-    glUseProgram(gapi.shaderProgramColor.id);
+    glUseProgram(gapi.shader_program_color.id);
 
     const auto color = (glm::vec4*) payload.base;
-    const auto loc = gapi.shaderUniformLocations[GAPI_SHADER_LOCATION_COLOR_SHADER_COLOR_ID];
-    gapi.mvpUniformLocationId = GAPI_SHADER_LOCATION_COLOR_SHADER_MVP_ID;
+    const auto loc = gapi.shader_uniform_locations[GAPI_SHADER_LOCATION_COLOR_SHADER_COLOR_ID];
+    gapi.mvp_uniform_location_id = GAPI_SHADER_LOCATION_COLOR_SHADER_MVP_ID;
 
     glUniform4fv(loc, 1, glm::value_ptr(*color));
 }
 
-static void gapiSetTexturePipeline(GApi& gapi, GAPICommandPayload payload) {
+static void gapi_set_texture_pipeline(GApi& gapi, GAPICommandPayload payload) {
 
 #ifdef VALIDATE
-    glValidateProgram(gapi.shaderProgramColor.id);
-    const auto statusReault = checkProgramStatus(gapi.shaderProgramColor, GL_VALIDATE_STATUS);
-    resultUnwrap(statusReault);
+    glValidateProgram(gapi.shader_program_color.id);
+    const auto status_reault = check_program_status(gapi.shader_program_color, GL_VALIDATE_STATUS);
+    result_unwrap(status_reault);
 #endif
 
-    glUseProgram(gapi.shaderProgramTexture.id);
+    glUseProgram(gapi.shader_program_texture.id);
 
     const auto textureId = (u64*) payload.base;
-    const auto loc = gapi.shaderUniformLocations[GAPI_SHADER_LOCATION_TEXTURE_SHADER_TEXTURE_ID];
-    gapi.mvpUniformLocationId = GAPI_SHADER_LOCATION_TEXTURE_SHADER_MVP_ID;
+    const auto loc = gapi.shader_uniform_locations[GAPI_SHADER_LOCATION_TEXTURE_SHADER_TEXTURE_ID];
+    gapi.mvp_uniform_location_id = GAPI_SHADER_LOCATION_TEXTURE_SHADER_MVP_ID;
 
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, *textureId);
     glUniform1i(loc, 1);
 }
 
-static void gapiDrawQuads(GApi& gapi, GAPICommandPayload payload) {
+static void gapi_draw_quads(GApi& gapi, GAPICommandPayload payload) {
     u64 cursor = 0;
 
-    glBindVertexArray(gapi.quadVao);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, gapi.quadIndicesBuffer);
+    glBindVertexArray(gapi.quad_vao);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, gapi.quad_indices_buffer);
 
     while (cursor < payload.size) {
-        const auto mvpMat = (glm::mat4*) &payload.base[cursor];
-        const auto loc = gapi.shaderUniformLocations[gapi.mvpUniformLocationId];
+        const auto mvp_mat = (glm::mat4*) &payload.base[cursor];
+        const auto loc = gapi.shader_uniform_locations[gapi.mvp_uniform_location_id];
 
-        glUniformMatrix4fv(loc, 1, GL_TRUE, glm::value_ptr(*mvpMat));
-        glDrawElements(GL_TRIANGLE_STRIP, quadIndicesCount, GL_UNSIGNED_INT, nullptr);
+        glUniformMatrix4fv(loc, 1, GL_TRUE, glm::value_ptr(*mvp_mat));
+        glDrawElements(GL_TRIANGLE_STRIP, quad_indices_count, GL_UNSIGNED_INT, nullptr);
 
         cursor += sizeof(glm::mat4);
     }
 }
 
-static void gapiDrawCenteredQuads(GApi& gapi, GAPICommandPayload payload) {
+static void gapi_draw_centered_quads(GApi& gapi, GAPICommandPayload payload) {
     u64 cursor = 0;
 
-    glBindVertexArray(gapi.centeredQuadVao);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, gapi.quadIndicesBuffer);
+    glBindVertexArray(gapi.centered_quad_vao);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, gapi.quad_indices_buffer);
 
     while (cursor < payload.size) {
-        const auto mvpMat = (glm::mat4*) &payload.base[cursor];
-        const auto loc = gapi.shaderUniformLocations[GAPI_SHADER_LOCATION_COLOR_SHADER_MVP_ID];
+        const auto mvp_mat = (glm::mat4*) &payload.base[cursor];
+        const auto loc = gapi.shader_uniform_locations[GAPI_SHADER_LOCATION_COLOR_SHADER_MVP_ID];
 
-        glUniformMatrix4fv(loc, 1, GL_TRUE, glm::value_ptr(*mvpMat));
-        glDrawElements(GL_TRIANGLE_STRIP, quadIndicesCount, GL_UNSIGNED_INT, nullptr);
+        glUniformMatrix4fv(loc, 1, GL_TRUE, glm::value_ptr(*mvp_mat));
+        glDrawElements(GL_TRIANGLE_STRIP, quad_indices_count, GL_UNSIGNED_INT, nullptr);
 
         cursor += sizeof(glm::mat4);
     }
 }
 
-void gapiRender2(GApi& gapi) {
-}
-
-void gapiRender(GApi& gapi, GameMemory& memory) {
-    auto commandsBuffer = &memory.gapiCommandsBuffer;
+void gapi_render(GApi& gapi, GameMemory& memory) {
+    auto commands_buffer = &memory.gapi_commands_buffer;
     u64 cursor = 0;
 
-    while (cursor < commandsBuffer->offset) {
-        auto command = (GAPICommand*) &commandsBuffer->base[cursor];
+    while (cursor < commands_buffer->offset) {
+        auto command = (GAPICommand*) &commands_buffer->base[cursor];
 
         switch (command->id) {
             case GAPI_COMMAND_DRAW_QUADS:
-                gapiDrawQuads(gapi, command->payload);
+                gapi_draw_quads(gapi, command->payload);
                 break;
 
             case GAPI_COMMAND_DRAW_CENTERED_QUADS:
-                gapiDrawCenteredQuads(gapi, command->payload);
+                gapi_draw_centered_quads(gapi, command->payload);
                 break;
 
             case GAPI_COMMAND_SET_COLOR_PIPELINE:
-                gapiSetColorPipeline(gapi, command->payload);
+                gapi_set_color_pipeline(gapi, command->payload);
                 break;
 
             case GAPI_COMMAND_SET_TEXTURE_PIPELINE:
-                gapiSetTexturePipeline(gapi, command->payload);
+                gapi_set_texture_pipeline(gapi, command->payload);
                 break;
 
             default:
@@ -546,6 +542,6 @@ void gapiRender(GApi& gapi, GameMemory& memory) {
         cursor += sizeof(GAPICommand);
     }
 
-    regionMemoryBufferFree(commandsBuffer);
-    regionMemoryBufferFree(&memory.gapiCommandsDataBuffer);
+    region_memory_buffer_free(commands_buffer);
+    region_memory_buffer_free(&memory.gapi_commands_data_buffer);
 }

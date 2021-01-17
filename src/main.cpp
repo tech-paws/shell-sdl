@@ -3,41 +3,42 @@
 #include "platform.hpp"
 #include "shell.hpp"
 
+// int sdl2shell_run() {
 int main() {
-    auto platformInitResult = platformInit();
+    auto platform_init_result = platform_init();
 
-    if (resultIsSuccess(platformInitResult)) {
-        auto platform = resultGetPayload(platformInitResult);
-        auto createWindowResult = platformCreateWindow(platform);
+    if (result_is_success(platform_init_result)) {
+        auto platform = result_get_payload(platform_init_result);
+        auto create_window_result = platform_create_window(platform);
 
-        if (resultIsSuccess(createWindowResult)) {
-            auto window = resultGetPayload(createWindowResult);
+        if (result_is_success(create_window_result)) {
+            auto window = result_get_payload(create_window_result);
             bool running = true;
-            auto shellStateResult = shellInit();
+            auto shell_state_result = shell_init();
 
-            if (resultIsSuccess(shellStateResult)) {
-                auto shellState = resultGetPayload(shellStateResult);
+            if (result_is_success(shell_state_result)) {
+                auto shell_state = result_get_payload(shell_state_result);
 
                 while (running) {
-                    running = platformEventLoop(platform, window);
-                    shellMainLoop(shellState, platform, window);
+                    running = platform_event_loop(platform, window);
+                    shell_main_loop(shell_state, platform, window);
                 }
             }
             else {
                 // TODO(sysint64): log
-                puts(createWindowResult.error.message);
+                puts(create_window_result.error.message);
             }
 
-            platformDestroyWindow(window);
+            platform_destroy_window(window);
         }
         else {
             // TODO(sysint64): log
-            puts(createWindowResult.error.message);
+            puts(create_window_result.error.message);
         }
     }
     else {
         // TODO(sysint64): log
-        puts(platformInitResult.error.message);
+        puts(platform_init_result.error.message);
     }
 
     puts("Successfully finished");

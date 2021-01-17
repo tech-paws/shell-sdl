@@ -29,8 +29,8 @@ struct TextureHeader {
 };
 
 
-Result<AssetData> assetLoadData(
-    RegionMemoryBuffer* destMemory,
-    const AssetType assetType,
-    const char* assetName
+Result<AssetData> asset_load_data(
+    RegionMemoryBuffer* dest_memory,
+    const AssetType asset_type,
+    const char* asset_name
 );

@@ -4,7 +4,8 @@
 #include "memory.hpp"
 
 enum class ShaderType {
-    vertex,    fragment,
+    vertex,
+    fragment,
 };
 
 struct Shader {
@@ -33,25 +34,25 @@ static const size_t GAPI_SHADER_LOCATION_COLOR_SHADER_MVP_ID = 2;
 static const size_t GAPI_SHADER_LOCATION_COLOR_SHADER_COLOR_ID = 3;
 
 struct GApi {
-    RegionMemoryBuffer memoryShaders;
+    RegionMemoryBuffer memory_shaders;
 
     Shader shaders[3];
-    ShaderProgram shaderPrograms[2];
-    u32 shaderUniformLocations[4];
+    ShaderProgram shader_programs[2];
+    u32 shader_uniform_locations[4];
     GLuint buffers[8];
 
-    ShaderProgram shaderProgramTexture;
-    ShaderProgram shaderProgramColor;
+    ShaderProgram shader_program_texture;
+    ShaderProgram shader_program_color;
 
-    GLuint quadIndicesBuffer;
-    GLuint quadVerticesBuffer;
-    GLuint quadTexCoordsBuffer;
-    GLuint quadVao;
+    GLuint quad_indices_buffer;
+    GLuint quad_vertices_buffer;
+    GLuint quad_tex_coords_buffer;
+    GLuint quad_vao;
 
-    GLuint centeredQuadIndicesBuffer;
-    GLuint centeredQuadVerticesBuffer;
-    GLuint centeredQuadTexCoordsBuffer;
-    GLuint centeredQuadVao;
+    GLuint centered_quad_indices_buffer;
+    GLuint centered_quad_vertices_buffer;
+    GLuint centered_quad_tex_coords_buffer;
+    GLuint centered_quad_vao;
 
-    size_t mvpUniformLocationId;
+    size_t mvp_uniform_location_id;
 };
