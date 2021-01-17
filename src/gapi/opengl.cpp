@@ -5,6 +5,7 @@
 #include "assets.hpp"
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include "vm.hpp"
 
 const size_t quad_vertices_count = 4;
 const glm::vec2 centered_quad_vertices[quad_vertices_count] = {
@@ -440,7 +441,7 @@ void gapi_delete_texture_2d(Texture2D texture) {
     glDeleteTextures(1, &texture.id);
 }
 
-static void gapi_set_color_pipeline(GApi& gapi, GAPICommandPayload payload) {
+static void gapi_set_color_pipeline(GApi& gapi, CommandPayload payload) {
 
 #ifdef VALIDATE
     glValidateProgram(gapi.shader_program_color.id);
@@ -450,14 +451,14 @@ static void gapi_set_color_pipeline(GApi& gapi, GAPICommandPayload payload) {
 
     glUseProgram(gapi.shader_program_color.id);
 
-    const auto color = (glm::vec4*) payload.base;
+    const auto color = (Vec4f*) payload.base;
     const auto loc = gapi.shader_uniform_locations[GAPI_SHADER_LOCATION_COLOR_SHADER_COLOR_ID];
     gapi.mvp_uniform_location_id = GAPI_SHADER_LOCATION_COLOR_SHADER_MVP_ID;
 
-    glUniform4fv(loc, 1, glm::value_ptr(*color));
+    glUniform4fv(loc, 1, vec4fptr(color));
 }
 
-static void gapi_set_texture_pipeline(GApi& gapi, GAPICommandPayload payload) {
+static void gapi_set_texture_pipeline(GApi& gapi, CommandPayload payload) {
 
 #ifdef VALIDATE
     glValidateProgram(gapi.shader_program_color.id);
@@ -476,61 +477,61 @@ static void gapi_set_texture_pipeline(GApi& gapi, GAPICommandPayload payload) {
     glUniform1i(loc, 1);
 }
 
-static void gapi_draw_quads(GApi& gapi, GAPICommandPayload payload) {
+static void gapi_draw_quads(GApi& gapi, CommandPayload payload) {
     u64 cursor = 0;
 
     glBindVertexArray(gapi.quad_vao);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, gapi.quad_indices_buffer);
 
     while (cursor < payload.size) {
-        const auto mvp_mat = (glm::mat4*) &payload.base[cursor];
+        const auto mvp_mat = (Mat4f*) &payload.base[cursor];
         const auto loc = gapi.shader_uniform_locations[gapi.mvp_uniform_location_id];
 
-        glUniformMatrix4fv(loc, 1, GL_TRUE, glm::value_ptr(*mvp_mat));
+        glUniformMatrix4fv(loc, 1, GL_TRUE, mat4fptr(mvp_mat));
         glDrawElements(GL_TRIANGLE_STRIP, quad_indices_count, GL_UNSIGNED_INT, nullptr);
 
-        cursor += sizeof(glm::mat4);
+        cursor += sizeof(Mat4f);
     }
 }
 
-static void gapi_draw_centered_quads(GApi& gapi, GAPICommandPayload payload) {
+static void gapi_draw_centered_quads(GApi& gapi, CommandPayload payload) {
     u64 cursor = 0;
 
     glBindVertexArray(gapi.centered_quad_vao);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, gapi.quad_indices_buffer);
 
     while (cursor < payload.size) {
-        const auto mvp_mat = (glm::mat4*) &payload.base[cursor];
+        const auto mvp_mat = (Mat4f*) &payload.base[cursor];
         const auto loc = gapi.shader_uniform_locations[GAPI_SHADER_LOCATION_COLOR_SHADER_MVP_ID];
 
-        glUniformMatrix4fv(loc, 1, GL_TRUE, glm::value_ptr(*mvp_mat));
+        glUniformMatrix4fv(loc, 1, GL_TRUE, mat4fptr(mvp_mat));
         glDrawElements(GL_TRIANGLE_STRIP, quad_indices_count, GL_UNSIGNED_INT, nullptr);
 
-        cursor += sizeof(glm::mat4);
+        cursor += sizeof(Mat4f);
     }
 }
 
-void gapi_render(GApi& gapi, GameMemory& memory) {
-    auto commands_buffer = &memory.gapi_commands_buffer;
-    u64 cursor = 0;
+void gapi_render(GApi& gapi) {
+    Commands commands = tech_paws_vm_consume_gapi_commands();
+    size_t cursor = 0;
 
-    while (cursor < commands_buffer->offset) {
-        auto command = (GAPICommand*) &commands_buffer->base[cursor];
+    while (cursor < commands.size) {
+        auto command = &commands.data[cursor];
 
         switch (command->id) {
-            case GAPI_COMMAND_DRAW_QUADS:
+            case COMMAND_GAPI_DRAW_QUADS:
                 gapi_draw_quads(gapi, command->payload);
                 break;
 
-            case GAPI_COMMAND_DRAW_CENTERED_QUADS:
+            case COMMAND_GAPI_DRAW_CENTERED_QUADS:
                 gapi_draw_centered_quads(gapi, command->payload);
                 break;
 
-            case GAPI_COMMAND_SET_COLOR_PIPELINE:
+            case COMMAND_GAPI_SET_COLOR_PIPELINE:
                 gapi_set_color_pipeline(gapi, command->payload);
                 break;
 
-            case GAPI_COMMAND_SET_TEXTURE_PIPELINE:
+            case COMMAND_GAPI_SET_TEXTURE_PIPELINE:
                 gapi_set_texture_pipeline(gapi, command->payload);
                 break;
 
@@ -539,9 +540,6 @@ void gapi_render(GApi& gapi, GameMemory& memory) {
                 break;
         }
 
-        cursor += sizeof(GAPICommand);
+        cursor += sizeof(Command);
     }
-
-    region_memory_buffer_free(commands_buffer);
-    region_memory_buffer_free(&memory.gapi_commands_data_buffer);
 }

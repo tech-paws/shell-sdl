@@ -1,5 +1,6 @@
 #include "shell.hpp"
 #include "assets.hpp"
+#include "vm.hpp"
 
 static void shell_render(Platform& platform, ShellState& shell_state);
 
@@ -63,10 +64,14 @@ void shell_main_loop(ShellState& shell_state, Platform& platform, Window window)
 
 static void shell_render(Platform& platform, ShellState& shell_state) {
     gapi_clear(0.0f, 0.0f, 0.0f);
-    // gapi_render2(platform.gapi);
+    tech_paws_vm_process_render_commands();
+    gapi_render(platform.gapi);
+    tech_paws_vm_gapi_flush();
 }
 
 static void shell_step(ShellState& shell_state, double delta_time) {
+    tech_paws_vm_process_commands();
+    tech_paws_vm_flush();
 }
 
 void shell_shutdown() {

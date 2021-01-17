@@ -2,7 +2,7 @@
 
 #include "primitives.hpp"
 #include "platform.hpp"
-#include "game_memory.hpp"
+#include "shell_memory.hpp"
 #include "assets.hpp"
 
 struct GApi;
@@ -40,7 +40,7 @@ void gapi_shutdown(GApiContext context);
 
 void gapi_clear(float r, float g, float b);
 
-void gapi_render(GApi& gapi, GameMemory& memory);
+void gapi_render(GApi& gapi);
 
 Texture2D gapi_create_texture_2d(AssetData data, Texture2DParameters params);
 
