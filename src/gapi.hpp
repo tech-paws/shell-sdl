@@ -4,6 +4,7 @@
 #include "platform.hpp"
 #include "shell_memory.hpp"
 #include "assets.hpp"
+#include "shell_config.hpp"
 
 struct GApi;
 
@@ -30,7 +31,7 @@ struct Texture2DParameters {
     bool mag_filter;
 };
 
-Result<GApi> gapi_init();
+Result<GApi> gapi_init(ShellConfig const& config);
 
 Result<GApiContext> gapi_create_context(Platform& platform, Window window);
 

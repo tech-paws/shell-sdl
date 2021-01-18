@@ -31,19 +31,19 @@ endif
 
 OBJECTS := $(addprefix $(BUILDDIR)/,$(SOURCES:%.cpp=%.o))
 
-BINARY = game
+LIBRARY = libsdl2_shell.so
 
-build: $(BINARY)
+build: $(LIBRARY)
 
-$(BINARY): $(OBJECTS)
-	$(CXX) $(LDFLAGS) $(OBJECTS) -o build/$(BINARY)
+$(LIBRARY): $(OBJECTS)
+	$(CXX) -shared $(LDFLAGS) $(OBJECTS) -o build/$(LIBRARY)
 
 $(BUILDDIR)/%.o: %.cpp
 	mkdir -p $(BUILDDIR)/$(dir $<)
 	$(CXX) $(CXXFLAGS) $(IMGUI_FLAGS) -c $< -o $@
 
-run: $(BINARY)
-	./$(BUILDDIR)/$(BINARY)
+run: $(LIBRARY)
+	./$(BUILDDIR)/$(LIBRARY)
 
 clean:
 	rm -rf $(BUILDDIR)

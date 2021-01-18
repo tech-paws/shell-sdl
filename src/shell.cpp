@@ -1,6 +1,7 @@
 #include "shell.hpp"
 #include "assets.hpp"
 #include "vm.hpp"
+#include "shell_config.hpp"
 
 static void shell_render(Platform& platform, ShellState& shell_state);
 
@@ -8,6 +9,7 @@ static void shell_step(ShellState& shell_state, double deltaTime);
 
 static void init_texture(ShellState& shell_state) {
     const Result<AssetData> test_texture_result = asset_load_data(
+        shell_state.config,
         &shell_state.memory.assets_buffer,
         AssetType::texture,
         "test.jpg"
@@ -21,8 +23,9 @@ static void init_texture(ShellState& shell_state) {
     shell_state.test_sprite_texture = gapi_create_texture_2d(test_texture, params);
 }
 
-Result<ShellState> shell_init() {
+Result<ShellState> shell_init(ShellConfig const& config) {
     auto shell_state = ShellState();
+    shell_state.config = config;
 
     auto buffer_result = create_region_memory_buffer(megabytes(85));
 

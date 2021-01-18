@@ -4,17 +4,17 @@
 #include "shell.hpp"
 #include "vm.hpp"
 
-int sdl2shell_run() {
+extern "C" void sdl2shell_run(ShellConfig config) {
     auto platform_init_result = platform_init();
 
     if (result_is_success(platform_init_result)) {
         auto platform = result_get_payload(platform_init_result);
-        auto create_window_result = platform_create_window(platform);
+        auto create_window_result = platform_create_window(config, platform);
 
         if (result_is_success(create_window_result)) {
             auto window = result_get_payload(create_window_result);
             bool running = true;
-            auto shell_state_result = shell_init();
+            auto shell_state_result = shell_init(config);
 
             if (result_is_success(shell_state_result)) {
                 auto shell_state = result_get_payload(shell_state_result);
@@ -42,5 +42,4 @@ int sdl2shell_run() {
     }
 
     puts("Successfully finished");
-    return 0;
 }

@@ -4,6 +4,7 @@
 #include "transforms.hpp"
 #include "gapi.hpp"
 #include "shell_memory.hpp"
+#include "shell_config.hpp"
 
 struct FrameInfo {
     float current_time = 0.f;
@@ -15,6 +16,7 @@ struct FrameInfo {
 };
 
 struct ShellState {
+    ShellConfig config;
     FrameInfo frame_info;
     ShellMemory memory;
 

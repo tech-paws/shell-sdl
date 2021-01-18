@@ -208,6 +208,7 @@ static void init_quad(GApi& gapi) {
 
 static Result<bool> gapi_load_shader(GApi& gapi, size_t id, const char* name, const char* file_name, ShaderType type) {
     const Result<AssetData> shader_asset_result = asset_load_data(
+        gapi.config,
         &gapi.memory_shaders,
         AssetType::shader,
         file_name
@@ -328,7 +329,7 @@ static Result<bool> init_texture_shader_program(GApi& gapi) {
     return result_create_success(true);
 }
 
-Result<GApi> gapi_init() {
+Result<GApi> gapi_init(ShellConfig const& config) {
     glDisable(GL_CULL_FACE);
     glDisable(GL_MULTISAMPLE);
     glDisable(GL_DEPTH_TEST);
@@ -341,6 +342,7 @@ Result<GApi> gapi_init() {
 
     if (result_is_success(buffer_result)) {
         GApi gapi;
+        gapi.config = config;
         gapi.memory_shaders = result_get_payload(buffer_result);
 
         Result<bool> init_component_result;
@@ -441,7 +443,7 @@ void gapi_delete_texture_2d(Texture2D texture) {
     glDeleteTextures(1, &texture.id);
 }
 
-static void gapi_set_color_pipeline(GApi& gapi, CommandPayload payload) {
+static void gapi_set_color_pipeline(GApi& gapi, BytesBuffer payload) {
 
 #ifdef VALIDATE
     glValidateProgram(gapi.shader_program_color.id);
@@ -458,7 +460,7 @@ static void gapi_set_color_pipeline(GApi& gapi, CommandPayload payload) {
     glUniform4fv(loc, 1, vec4fptr(color));
 }
 
-static void gapi_set_texture_pipeline(GApi& gapi, CommandPayload payload) {
+static void gapi_set_texture_pipeline(GApi& gapi, BytesBuffer payload) {
 
 #ifdef VALIDATE
     glValidateProgram(gapi.shader_program_color.id);
@@ -477,7 +479,7 @@ static void gapi_set_texture_pipeline(GApi& gapi, CommandPayload payload) {
     glUniform1i(loc, 1);
 }
 
-static void gapi_draw_quads(GApi& gapi, CommandPayload payload) {
+static void gapi_draw_quads(GApi& gapi, BytesBuffer payload) {
     u64 cursor = 0;
 
     glBindVertexArray(gapi.quad_vao);
@@ -494,7 +496,7 @@ static void gapi_draw_quads(GApi& gapi, CommandPayload payload) {
     }
 }
 
-static void gapi_draw_centered_quads(GApi& gapi, CommandPayload payload) {
+static void gapi_draw_centered_quads(GApi& gapi, BytesBuffer payload) {
     u64 cursor = 0;
 
     glBindVertexArray(gapi.centered_quad_vao);

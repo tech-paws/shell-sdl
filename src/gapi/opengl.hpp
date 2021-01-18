@@ -2,6 +2,7 @@
 
 #include <GL/glew.h>
 #include "memory.hpp"
+#include "shell_config.hpp"
 
 enum class ShaderType {
     vertex,
@@ -34,6 +35,7 @@ static const size_t GAPI_SHADER_LOCATION_COLOR_SHADER_MVP_ID = 2;
 static const size_t GAPI_SHADER_LOCATION_COLOR_SHADER_COLOR_ID = 3;
 
 struct GApi {
+    ShellConfig config;
     RegionMemoryBuffer memory_shaders;
 
     Shader shaders[3];

@@ -12,13 +12,13 @@ Result<Platform> platform_init() {
     return result_create_success(Platform());
 }
 
-Result<Window> platform_create_window(Platform& platform) {
+Result<Window> platform_create_window(ShellConfig const& config, Platform& platform) {
     auto sdl_window = SDL_CreateWindow(
-        "Game", // TODO(sysint64): rm hardcode
+        config.window_title,
         SDL_WINDOWPOS_CENTERED,
         SDL_WINDOWPOS_CENTERED,
-        1024, // TODO(sysint64): rm hardcode
-        768, // TODO(sysint64): rm hardcode
+        config.window_width,
+        config.window_height,
         SDL_WINDOW_OPENGL
     );
 
@@ -41,7 +41,7 @@ Result<Window> platform_create_window(Platform& platform) {
 
     window.gapi_context = result_get_payload(create_context_result);
 
-    auto init_gapi_result = gapi_init();
+    auto init_gapi_result = gapi_init(config);
 
     if (result_has_error(init_gapi_result)) {
         return switch_error<Window>(init_gapi_result);

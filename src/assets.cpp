@@ -1,11 +1,12 @@
 #include "assets.hpp"
 #include "platform.hpp"
+#include "shell_config.hpp"
 #include <jpeglib.h>
 #include <setjmp.h>
 
-static Result<AssetData> load_shader(RegionMemoryBuffer* dest_memory, const char* asset_name) {
+static Result<AssetData> load_shader(ShellConfig const& config, RegionMemoryBuffer* dest_memory, const char* asset_name) {
     char path[256] { 0 };
-    platform_build_path(&path[0], "assets", "shaders", asset_name);
+    platform_build_path(&path[0], config.assets_path, "shaders", asset_name);
 
     FILE* file = fopen(&path[0], "r");
 
@@ -47,7 +48,7 @@ static Result<AssetData> load_shader(RegionMemoryBuffer* dest_memory, const char
     return result_create_success(asset_data);
 }
 
-static Result<AssetData> load_png_texture(RegionMemoryBuffer* dest_memory, const char* asset_name) {
+static Result<AssetData> load_png_texture(ShellConfig const& config, RegionMemoryBuffer* dest_memory, const char* asset_name) {
     return result_create_general_error<AssetData>(
         ErrorCode::LoadAsset,
         "PNG Not implemented yet"
@@ -67,9 +68,9 @@ METHODDEF(void) jpegErrorExit (j_common_ptr cinfo) {
     longjmp(err->set_jmp_buffer, 1);
 }
 
-static Result<AssetData> load_jpeg_texture(RegionMemoryBuffer* dest_memory, const char* asset_name) {
+static Result<AssetData> load_jpeg_texture(ShellConfig const& config, RegionMemoryBuffer* dest_memory, const char* asset_name) {
     char path[256] { 0 };
-    platform_build_path(&path[0], "assets", "textures", asset_name);
+    platform_build_path(&path[0], config.assets_path, "textures", asset_name);
 
     FILE* infile = fopen(&path[0], "rb");
 
@@ -146,7 +147,7 @@ static Result<AssetData> load_jpeg_texture(RegionMemoryBuffer* dest_memory, cons
     return result_create_success(asset_data);
 }
 
-static Result<AssetData> load_texture(RegionMemoryBuffer* dest_memory, const char* asset_name) {
+static Result<AssetData> load_texture(ShellConfig const& config, RegionMemoryBuffer* dest_memory, const char* asset_name) {
     const char* dot;
     dot = strrchr(asset_name, '.');
 
@@ -158,10 +159,10 @@ static Result<AssetData> load_texture(RegionMemoryBuffer* dest_memory, const cha
     }
 
     if (strcmp(dot, ".jpeg") == 0 || strcmp(dot, ".jpg") == 0) {
-        return load_jpeg_texture(dest_memory, asset_name);
+        return load_jpeg_texture(config, dest_memory, asset_name);
     }
     else if (strcmp(dot, ".png") == 0) {
-        return load_png_texture(dest_memory, asset_name);
+        return load_png_texture(config, dest_memory, asset_name);
     }
     else {
         return result_create_general_error<AssetData>(
@@ -172,13 +173,14 @@ static Result<AssetData> load_texture(RegionMemoryBuffer* dest_memory, const cha
 }
 
 Result<AssetData> asset_load_data(
+    ShellConfig const& config,
     RegionMemoryBuffer* dest_memory,
     const AssetType assetType,
     const char* asset_name
 ) {
     switch (assetType) {
         case texture:
-            return load_texture(dest_memory, asset_name);
+            return load_texture(config, dest_memory, asset_name);
 
         case sfx:
             return result_create_general_error<AssetData>(
@@ -193,7 +195,7 @@ Result<AssetData> asset_load_data(
             );
 
         case shader:
-            return load_shader(dest_memory, asset_name);
+            return load_shader(config, dest_memory, asset_name);
 
         case font:
             return result_create_general_error<AssetData>(

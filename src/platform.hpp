@@ -1,6 +1,7 @@
 #pragma once
 
 #include <initializer_list>
+#include "shell_config.hpp"
 
 struct Platform;
 
@@ -16,7 +17,7 @@ struct Window;
 
 Result<Platform> platform_init();
 
-Result<Window> platform_create_window(Platform& platform);
+Result<Window> platform_create_window(ShellConfig const& config, Platform& platform);
 
 bool platform_event_loop(Platform& platform, Window& window);
 

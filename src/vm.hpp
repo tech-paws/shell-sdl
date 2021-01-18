@@ -1,13 +1,13 @@
 #pragma once
 
-struct CommandPayload {
+struct BytesBuffer {
     u64 size;
     u8 const* base;
 };
 
 struct Command {
     u64 id;
-    CommandPayload payload;
+    BytesBuffer payload;
 };
 
 struct Commands {
