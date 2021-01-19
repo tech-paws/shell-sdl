@@ -1,8 +1,7 @@
-#include <stdio.h>
-
 #include "platform.hpp"
 #include "shell.hpp"
 #include "vm.hpp"
+#include "log.hpp"
 
 extern "C" void sdl2shell_run(ShellConfig config) {
     auto platform_init_result = platform_init();
@@ -25,21 +24,17 @@ extern "C" void sdl2shell_run(ShellConfig config) {
                 }
             }
             else {
-                // TODO(sysint64): log
-                puts(create_window_result.error.message);
+                log_error(create_window_result.error.message);
             }
 
             platform_destroy_window(window);
+            log_info("Successfully finished");
         }
         else {
-            // TODO(sysint64): log
-            puts(create_window_result.error.message);
+            log_error(create_window_result.error.message);
         }
     }
     else {
-        // TODO(sysint64): log
-        puts(platform_init_result.error.message);
+        log_error(platform_init_result.error.message);
     }
-
-    puts("Successfully finished");
 }

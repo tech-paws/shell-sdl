@@ -36,6 +36,8 @@ typedef size_t MemoryIndex;
 #define gigabytes(value) (megabytes(value)*1024LL)
 #define terabytes(value) (gigabytes(value)*1024LL)
 
+#include "log.hpp"
+
 enum class ResultCase {
     error,
     success
@@ -123,8 +125,7 @@ inline T result_get_payload(Result<T> result) {
 template<typename T>
 inline T result_unwrap(Result<T> result) {
     if (result.result_case != ResultCase::success) {
-        // TODO(sysint64): Log
-        puts(result.error.message);
+        log_error(result.error.message);
         exit(EXIT_FAILURE);
     }
 

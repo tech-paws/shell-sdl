@@ -47,3 +47,13 @@ extern "C" Commands tech_paws_vm_consume_gapi_commands();
 extern "C" void tech_paws_vm_gapi_flush();
 
 extern "C" void tech_paws_vm_flush();
+
+extern "C" void tech_paws_vm_log_trace(char const* message);
+
+extern "C" void tech_paws_vm_log_error(char const* message);
+
+extern "C" void tech_paws_vm_log_warn(char const* message);
+
+extern "C" void tech_paws_vm_log_debug(char const* message);
+
+extern "C" void tech_paws_vm_log_info(char const* message);
