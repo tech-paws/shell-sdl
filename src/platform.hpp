@@ -51,6 +51,4 @@ void platform_build_path(char* dst, Args... args) {
     if (offset > 0) {
         dst[offset - 1] = 0;
     }
-
-    puts(&dst[0]);
 }

@@ -1,19 +1,23 @@
 #include "assets.hpp"
 #include "platform.hpp"
 #include "shell_config.hpp"
+#include "log.hpp"
 #include <jpeglib.h>
 #include <setjmp.h>
 
 static Result<AssetData> load_shader(ShellConfig const& config, RegionMemoryBuffer* dest_memory, const char* asset_name) {
     char path[256] { 0 };
+    char relative_path[256] { 0 };
+
     platform_build_path(&path[0], config.assets_path, "shaders", asset_name);
+    platform_build_path(&relative_path[0], "shaders", asset_name);
 
     FILE* file = fopen(&path[0], "r");
 
     if (file == nullptr) {
         return result_create_general_error<AssetData>(
             ErrorCode::LoadAsset,
-            "Can't open asset: %s", &path[0]
+            "Can't open asset: %s", &relative_path[0]
         );
     }
 
@@ -45,6 +49,7 @@ static Result<AssetData> load_shader(ShellConfig const& config, RegionMemoryBuff
         .data = data
     };
 
+    log_info("Successfully loaded asset: %s", relative_path);
     return result_create_success(asset_data);
 }
 
@@ -70,14 +75,17 @@ METHODDEF(void) jpegErrorExit (j_common_ptr cinfo) {
 
 static Result<AssetData> load_jpeg_texture(ShellConfig const& config, RegionMemoryBuffer* dest_memory, const char* asset_name) {
     char path[256] { 0 };
+    char relative_path[256] { 0 };
+
     platform_build_path(&path[0], config.assets_path, "textures", asset_name);
+    platform_build_path(&relative_path[0], "textures", asset_name);
 
     FILE* infile = fopen(&path[0], "rb");
 
     if (infile == nullptr) {
         return result_create_general_error<AssetData>(
             ErrorCode::LoadAsset,
-            "Can't open asset: %s", &path[0]
+            "Can't open asset: %s", &relative_path[0]
         );
     }
 
@@ -144,6 +152,7 @@ static Result<AssetData> load_jpeg_texture(ShellConfig const& config, RegionMemo
         .data = data
     };
 
+    log_info("Successfully loaded asset: %s", relative_path);
     return result_create_success(asset_data);
 }
 
