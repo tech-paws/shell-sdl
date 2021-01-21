@@ -40,9 +40,9 @@ extern "C" void tech_paws_vm_process_commands();
 
 extern "C" void tech_paws_vm_process_render_commands();
 
-extern "C" Commands tech_paws_vm_consume_commands();
+extern "C" Commands tech_paws_vm_get_commands();
 
-extern "C" Commands tech_paws_vm_consume_gapi_commands();
+extern "C" Commands tech_paws_vm_get_gapi_commands();
 
 extern "C" void tech_paws_vm_gapi_flush();
 

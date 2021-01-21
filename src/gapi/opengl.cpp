@@ -514,11 +514,17 @@ static void gapi_draw_centered_quads(GApi& gapi, BytesBuffer payload) {
 }
 
 void gapi_render(GApi& gapi) {
-    Commands commands = tech_paws_vm_consume_gapi_commands();
+    Commands commands = tech_paws_vm_get_gapi_commands();
     size_t cursor = 0;
 
+    if (commands.size == 0) {
+        return;
+    }
+
+    int i = 0;
+
     while (cursor < commands.size) {
-        auto command = &commands.data[cursor];
+        auto command = &commands.data[i];
 
         switch (command->id) {
             case COMMAND_GAPI_DRAW_QUADS:
@@ -543,5 +549,6 @@ void gapi_render(GApi& gapi) {
         }
 
         cursor += sizeof(Command);
+        i += 1;
     }
 }
