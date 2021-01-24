@@ -5,6 +5,7 @@
 #include "gapi.hpp"
 #include "shell_memory.hpp"
 #include "shell_config.hpp"
+#include "vm.hpp"
 
 struct FrameInfo {
     float current_time = 0.f;
@@ -27,8 +28,8 @@ struct ShellState {
 
     CameraMatrices camera_matrices;
     OthroCameraTransforms camera_transform = {
-        .viewport_size = glm::vec2(1024, 768),
-        .position = glm::vec2(0, 0),
+        .viewport_size = vm_vec2f(1024, 768),
+        .position = vm_vec2f(0, 0),
         .zoom = 1.f
     };
 };

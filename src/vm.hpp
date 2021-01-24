@@ -15,6 +15,17 @@ struct Commands {
     size_t size;
 };
 
+struct Vec2f {
+    float x;
+    float y;
+};
+
+struct Vec3f {
+    float x;
+    float y;
+    float z;
+};
+
 struct Vec4f {
     float x;
     float y;
