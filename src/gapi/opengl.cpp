@@ -6,6 +6,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include "vm.hpp"
+#include "vm_math.hpp"
 
 const size_t quad_vertices_count = 4;
 const glm::vec2 centered_quad_vertices[quad_vertices_count] = {
@@ -457,7 +458,7 @@ static void gapi_set_color_pipeline(GApi& gapi, BytesBuffer payload) {
     const auto loc = gapi.shader_uniform_locations[GAPI_SHADER_LOCATION_COLOR_SHADER_COLOR_ID];
     gapi.mvp_uniform_location_id = GAPI_SHADER_LOCATION_COLOR_SHADER_MVP_ID;
 
-    glUniform4fv(loc, 1, vec4fptr(color));
+    glUniform4fv(loc, 1, tech_paws_vm_math_vec4fptr(color));
 }
 
 static void gapi_set_texture_pipeline(GApi& gapi, BytesBuffer payload) {
@@ -489,7 +490,7 @@ static void gapi_draw_quads(GApi& gapi, BytesBuffer payload) {
         const auto mvp_mat = (Mat4f*) &payload.base[cursor];
         const auto loc = gapi.shader_uniform_locations[gapi.mvp_uniform_location_id];
 
-        glUniformMatrix4fv(loc, 1, GL_TRUE, mat4fptr(mvp_mat));
+        glUniformMatrix4fv(loc, 1, GL_TRUE, tech_paws_vm_math_mat4fptr(mvp_mat));
         glDrawElements(GL_TRIANGLE_STRIP, quad_indices_count, GL_UNSIGNED_INT, nullptr);
 
         cursor += sizeof(Mat4f);
@@ -506,7 +507,7 @@ static void gapi_draw_centered_quads(GApi& gapi, BytesBuffer payload) {
         const auto mvp_mat = (Mat4f*) &payload.base[cursor];
         const auto loc = gapi.shader_uniform_locations[GAPI_SHADER_LOCATION_COLOR_SHADER_MVP_ID];
 
-        glUniformMatrix4fv(loc, 1, GL_TRUE, mat4fptr(mvp_mat));
+        glUniformMatrix4fv(loc, 1, GL_TRUE, tech_paws_vm_math_mat4fptr(mvp_mat));
         glDrawElements(GL_TRIANGLE_STRIP, quad_indices_count, GL_UNSIGNED_INT, nullptr);
 
         cursor += sizeof(Mat4f);

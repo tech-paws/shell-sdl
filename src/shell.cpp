@@ -7,22 +7,6 @@ static void shell_render(Platform& platform, ShellState& shell_state);
 
 static void shell_step(ShellState& shell_state, double deltaTime);
 
-static void init_texture(ShellState& shell_state) {
-    const Result<AssetData> test_texture_result = asset_load_data(
-        shell_state.config,
-        &shell_state.memory.assets_buffer,
-        AssetType::texture,
-        "test.jpg"
-    );
-
-    const AssetData test_texture = result_unwrap(test_texture_result);
-    const Texture2DParameters params = {
-        .min_filter = true,
-        .mag_filter = true,
-    };
-    shell_state.test_sprite_texture = gapi_create_texture_2d(test_texture, params);
-}
-
 Result<ShellState> shell_init(ShellConfig const& config) {
     auto shell_state = ShellState();
     shell_state.config = config;
@@ -34,8 +18,6 @@ Result<ShellState> shell_init(ShellConfig const& config) {
 
         region_memory_buffer_add_region(&memory_root_buffer, &shell_state.memory.assets_buffer, megabytes(40));
         region_memory_buffer_add_region(&memory_root_buffer, &shell_state.memory.frame_buffer, megabytes(10));
-
-        init_texture(shell_state);
 
         return result_create_success(shell_state);
     } else {

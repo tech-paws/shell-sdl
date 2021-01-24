@@ -20,16 +20,4 @@ struct ShellState {
     ShellConfig config;
     FrameInfo frame_info;
     ShellMemory memory;
-
-    Transforms2D test_sprite_transforms;
-    glm::mat4 test_sprite_model_matrix;
-    glm::mat4 test_sprite_mvp_matrix;
-    Texture2D test_sprite_texture;
-
-    CameraMatrices camera_matrices;
-    OthroCameraTransforms camera_transform = {
-        .viewport_size = vm_vec2f(1024, 768),
-        .position = vm_vec2f(0, 0),
-        .zoom = 1.f
-    };
 };
