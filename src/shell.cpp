@@ -43,7 +43,7 @@ void shell_main_loop(ShellState& shell_state, Platform& platform, Window window)
         frame_info.fps = frame_info.frames;
         frame_info.frames = 1;
 
-        printf("FPS: %d\n", frame_info.fps);
+        // printf("FPS: %d\n", frame_info.fps);
     }
 }
 

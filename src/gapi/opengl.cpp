@@ -514,6 +514,26 @@ static void gapi_draw_centered_quads(GApi& gapi, BytesBuffer payload) {
     }
 }
 
+struct TextCommandPayload {
+    Vec2f pos;
+    BytesBuffer text;
+};
+
+static void gapi_draw_texts(GApi& gapi, BytesBuffer payload, BytesBuffer text_payload) {
+    u64 cursor = 0;
+
+    // while (cursor < payload.size) {
+        const auto pos = (Vec2f*) &payload.base[cursor];
+
+        printf("Pos: (%f, %f)\n", pos->x, pos->y);
+        printf("Text Size: %lu\n", text_payload.size);
+        printf("Text: %.*s\n", (int) text_payload.size, text_payload.base);
+        // puts("---\n");
+
+        // cursor += sizeof(TextCommandPayload);
+    // }
+}
+
 void gapi_render(GApi& gapi) {
     Commands commands = tech_paws_vm_get_gapi_commands();
     size_t cursor = 0;
@@ -527,21 +547,26 @@ void gapi_render(GApi& gapi) {
     while (cursor < commands.size) {
         auto command = &commands.data[i];
 
+        // TODO(sysint64): validations
         switch (command->id) {
             case COMMAND_GAPI_DRAW_QUADS:
-                gapi_draw_quads(gapi, command->payload);
+                gapi_draw_quads(gapi, command->payload[0]);
+                break;
+
+            case COMMAND_GAPI_DRAW_TEXTS:
+                gapi_draw_texts(gapi, command->payload[0], command->payload[1]);
                 break;
 
             case COMMAND_GAPI_DRAW_CENTERED_QUADS:
-                gapi_draw_centered_quads(gapi, command->payload);
+                gapi_draw_centered_quads(gapi, command->payload[0]);
                 break;
 
             case COMMAND_GAPI_SET_COLOR_PIPELINE:
-                gapi_set_color_pipeline(gapi, command->payload);
+                gapi_set_color_pipeline(gapi, command->payload[0]);
                 break;
 
             case COMMAND_GAPI_SET_TEXTURE_PIPELINE:
-                gapi_set_texture_pipeline(gapi, command->payload);
+                gapi_set_texture_pipeline(gapi, command->payload[0]);
                 break;
 
             default:

@@ -7,7 +7,8 @@ struct BytesBuffer {
 
 struct Command {
     u64 id;
-    BytesBuffer payload;
+    u64 count;
+    BytesBuffer const* payload;
 };
 
 struct Commands {
