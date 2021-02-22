@@ -2,6 +2,7 @@
 
 #include <initializer_list>
 #include "shell_config.hpp"
+#include "assets.hpp"
 
 struct Platform;
 
@@ -15,9 +16,13 @@ struct Window;
 
 #include "primitives.hpp"
 
+struct Font;
+
 Result<Platform> platform_init();
 
 Result<Window> platform_create_window(ShellConfig const& config, Platform& platform);
+
+Result<AssetData> platform_load_font(ShellConfig const& config, RegionMemoryBuffer* dest_memory, const char* asset_name);
 
 bool platform_event_loop(Platform& platform, Window& window);
 

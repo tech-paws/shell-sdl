@@ -45,7 +45,7 @@ enum class ResultCase {
 
 struct GeneralError {
     ErrorCode code;
-    char message[256];
+    char message[1024];
 };
 
 struct String {

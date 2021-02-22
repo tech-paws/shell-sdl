@@ -9,6 +9,13 @@ Result<Platform> platform_init() {
         );
     }
 
+    if (TTF_Init() < 0) {
+        return result_create_general_error<Platform>(
+            ErrorCode::PlatformInit,
+            TTF_GetError()
+        );
+    }
+
     return result_create_success(Platform());
 }
 
@@ -78,4 +85,73 @@ void platform_shutdown(Platform& platform) {
 void platform_destroy_window(Window& window) {
     gapi_shutdown(window.gapi_context);
     SDL_DestroyWindow(window.sdl_window);
+}
+
+Result<AssetData> platform_load_font(ShellConfig const& config, RegionMemoryBuffer* dest_memory, const char* asset_name) {
+    char path[1024] { 0 };
+    char relative_path[1024] { 0 };
+
+    platform_build_path(&path[0], config.assets_path, "fonts", asset_name);
+    platform_build_path(&relative_path[0], "fonts", asset_name);
+
+    FILE* file = fopen(&path[0], "rb");
+
+    if (file == nullptr) {
+        return result_create_general_error<AssetData>(
+            ErrorCode::LoadAsset,
+            "Can't open asset: %s", &relative_path[0]
+        );
+    }
+
+    fclose(file);
+
+    Font font = {
+        .sizes_count = 0,
+    };
+
+    strcpy(&font.name[0], asset_name);
+    strcpy(&font.path[0], &path[0]);
+    strcpy(&font.relative_path[0], &relative_path[0]);
+
+    Result<u8*> data_result = region_memory_buffer_alloc(dest_memory, sizeof(Font));
+
+    if (result_has_error(data_result)) {
+        return switch_error<AssetData>(data_result);
+    }
+
+    u8* data = result_get_payload(data_result);
+    memcpy(data, &font, sizeof(Font));
+
+    AssetData asset_data = {
+        .size = sizeof(Font),
+        .data = data
+    };
+
+    log_info("Successfully loaded asset: %s", relative_path);
+    return result_create_success(asset_data);
+}
+
+Result<TTF_Font*> get_sdl2_ttf_font(Font* font, u32 font_size) {
+    for (size_t i = 0; i < font->sizes_count; i += 1) {
+        if (font->sizes[i].size == font_size) {
+            return result_create_success(font->sizes[i].font);
+        }
+    }
+
+    auto ttf_font = TTF_OpenFont(&font->path[0], font_size);
+
+    if (!ttf_font) {
+        return result_create_general_error<TTF_Font*>(
+            ErrorCode::GetTTFFont,
+            TTF_GetError()
+        );
+    }
+
+    font->sizes_count += 1;
+    assert(font->sizes_count < 1024);
+
+    font->sizes[font->sizes_count - 1].size = font_size;
+    font->sizes[font->sizes_count - 1].font = ttf_font;
+
+    return result_create_success(font->sizes[font->sizes_count - 1].font);
 }

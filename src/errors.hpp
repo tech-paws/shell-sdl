@@ -6,6 +6,8 @@ enum class ErrorCode {
     Allocation,
     CreateWindow,
     LoadAsset,
+    RenderText,
+    GetTTFFont,
     GApiCreateContext,
     GApiInit,
     GApiCreateShader,

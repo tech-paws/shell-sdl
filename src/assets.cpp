@@ -6,8 +6,8 @@
 #include <setjmp.h>
 
 static Result<AssetData> load_shader(ShellConfig const& config, RegionMemoryBuffer* dest_memory, const char* asset_name) {
-    char path[256] { 0 };
-    char relative_path[256] { 0 };
+    char path[1024] { 0 };
+    char relative_path[1024] { 0 };
 
     platform_build_path(&path[0], config.assets_path, "shaders", asset_name);
     platform_build_path(&relative_path[0], "shaders", asset_name);
@@ -74,8 +74,8 @@ METHODDEF(void) jpegErrorExit (j_common_ptr cinfo) {
 }
 
 static Result<AssetData> load_jpeg_texture(ShellConfig const& config, RegionMemoryBuffer* dest_memory, const char* asset_name) {
-    char path[256] { 0 };
-    char relative_path[256] { 0 };
+    char path[1024] { 0 };
+    char relative_path[1024] { 0 };
 
     platform_build_path(&path[0], config.assets_path, "textures", asset_name);
     platform_build_path(&relative_path[0], "textures", asset_name);
@@ -207,10 +207,7 @@ Result<AssetData> asset_load_data(
             return load_shader(config, dest_memory, asset_name);
 
         case font:
-            return result_create_general_error<AssetData>(
-                ErrorCode::LoadAsset,
-                "Not implemented yet"
-            );
+            return platform_load_font(config, dest_memory, asset_name);
 
         case level:
             return result_create_general_error<AssetData>(

@@ -29,7 +29,6 @@ struct TextureHeader {
     TextureFormat format;
 };
 
-
 Result<AssetData> asset_load_data(
     ShellConfig const& config,
     RegionMemoryBuffer* dest_memory,

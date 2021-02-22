@@ -210,7 +210,7 @@ static void init_quad(GApi& gapi) {
 static Result<bool> gapi_load_shader(GApi& gapi, size_t id, const char* name, const char* file_name, ShaderType type) {
     const Result<AssetData> shader_asset_result = asset_load_data(
         gapi.config,
-        &gapi.memory_shaders,
+        &gapi.memory,
         AssetType::shader,
         file_name
     );
@@ -227,6 +227,24 @@ static Result<bool> gapi_load_shader(GApi& gapi, size_t id, const char* name, co
     }
 
     gapi.shaders[id] = result_get_payload(shader_result);
+    return result_create_success(true);
+}
+
+inline static Result<bool> init_debug_font(GApi& gapi) {
+    const Result<AssetData> asset_result = asset_load_data(
+        gapi.config,
+        &gapi.memory,
+        AssetType::font,
+        "DejaVuSans.ttf"
+    );
+
+    if (result_has_error(asset_result)) {
+        return switch_error<bool>(asset_result);
+    }
+
+    auto asset = result_get_payload(asset_result);
+    gapi.debug_font = (Font*) asset.data;
+
     return result_create_success(true);
 }
 
@@ -344,13 +362,21 @@ Result<GApi> gapi_init(ShellConfig const& config) {
     if (result_is_success(buffer_result)) {
         GApi gapi;
         gapi.config = config;
-        gapi.memory_shaders = result_get_payload(buffer_result);
+        gapi.memory = result_get_payload(buffer_result);
 
         Result<bool> init_component_result;
 
         // Geometry
         init_quad(gapi);
         init_centered_quad(gapi);
+
+        // Fonts
+
+        init_component_result = init_debug_font(gapi);
+
+        if (result_has_error(init_component_result)) {
+            return switch_error<GApi>(init_component_result);
+        }
 
         // Shaders
         init_component_result = init_fragment_color_shader(gapi);
@@ -514,21 +540,92 @@ static void gapi_draw_centered_quads(GApi& gapi, BytesBuffer payload) {
     }
 }
 
-struct TextCommandPayload {
-    Vec2f pos;
-    BytesBuffer text;
-};
+static Texture2D update_texture_2d(Texture2D texture, Texture2DParameters params) {
+    const auto wrap_s = params.wrap_s ? GL_REPEAT : GL_CLAMP_TO_EDGE;
+    const auto wrap_t = params.wrap_t ? GL_REPEAT : GL_CLAMP_TO_EDGE;
+    const auto min_filter = params.min_filter ? GL_LINEAR : GL_NEAREST;
+    const auto mag_filter = params.mag_filter ? GL_LINEAR : GL_NEAREST;
 
-static void gapi_draw_texts(GApi& gapi, BytesBuffer payload, BytesBuffer text_payload) {
+    glBindTexture(GL_TEXTURE_2D, texture.id);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, min_filter);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, mag_filter);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrap_s);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrap_t);
+
+    return texture;
+}
+
+static Texture2D create_texture_2d_from_sdl_surface(SDL_Surface const* surface, Texture2DParameters params) {
+    Texture2D texture;
+    glGenTextures(1, &texture.id);
+    glBindTexture(GL_TEXTURE_2D, texture.id);
+
+    texture.width = surface->w;
+    texture.height = surface->h;
+
+    const auto format = surface->format->BytesPerPixel == 4 ? GL_RGBA : GL_RGB;
+    glTexImage2D(
+        /* target */ GL_TEXTURE_2D,
+        /* level */ 0,
+        /* internalformat */ format,
+        /* width */ texture.width,
+        /* height */ texture.height,
+        /* border */ 0,
+        /* format */ format,
+        /* type */ GL_UNSIGNED_BYTE,
+        /* data */ surface->pixels
+    );
+
+    return update_texture_2d(texture, params);
+}
+
+static void gapi_draw_texts(GApi& gapi, BytesBuffer text_size_payload, BytesBuffer pos_payload, BytesBuffer text_payload) {
     u64 cursor = 0;
 
     // while (cursor < payload.size) {
-        const auto pos = (Vec2f*) &payload.base[cursor];
+        const auto text_size = (u32*) &text_size_payload.base[cursor];
+        const auto pos = (Vec2f*) &pos_payload.base[cursor];
+        char text[1024] = {};
+
+        memcpy(&text[0], text_payload.base, text_payload.size);
+        text[text_payload.size] = '\0';
 
         printf("Pos: (%f, %f)\n", pos->x, pos->y);
-        printf("Text Size: %lu\n", text_payload.size);
+        printf("Text length: %lu\n", text_payload.size);
+        printf("Font size: %d\n", *text_size);
         printf("Text: %.*s\n", (int) text_payload.size, text_payload.base);
-        // puts("---\n");
+        printf("Text: %s\n", &text[0]);
+        puts("---\n");
+
+        if (text_payload.size == 0) {
+            return;
+        }
+
+        const auto color = SDL_Color { 0, 0, 0 };
+        auto font_result = get_sdl2_ttf_font(gapi.debug_font, *text_size);
+        const auto font = result_unwrap(font_result);
+
+        SDL_Surface* surface = TTF_RenderText_Blended(font, &text[0], color);
+
+        if (!surface) {
+            result_unwrap(
+                result_create_general_error<bool>(
+                    ErrorCode::RenderText,
+                    TTF_GetError()
+                )
+            );
+            // throw new Error("Unable create text texture: " ~ to!string(TTF_GetError()));
+        }
+
+        const Texture2DParameters params = {
+            .min_filter = false,
+            .mag_filter = false
+        };
+
+        auto const texture = create_texture_2d_from_sdl_surface(surface, params);
+
+        SDL_FreeSurface(surface);
 
         // cursor += sizeof(TextCommandPayload);
     // }
@@ -554,7 +651,7 @@ void gapi_render(GApi& gapi) {
                 break;
 
             case COMMAND_GAPI_DRAW_TEXTS:
-                gapi_draw_texts(gapi, command->payload[0], command->payload[1]);
+                gapi_draw_texts(gapi, command->payload[0], command->payload[1], command->payload[2]);
                 break;
 
             case COMMAND_GAPI_DRAW_CENTERED_QUADS:

@@ -25,6 +25,12 @@ struct Texture2D {
     u32 height;
 };
 
+struct TextParams {
+    u64 text_size;
+    Font* font;
+    const char* text;
+};
+
 static const size_t GAPI_SHADER_FRAGMENT_COLOR_ID = 0;
 static const size_t GAPI_SHADER_FRAGMENT_TEXTURE_ID = 1;
 static const size_t GAPI_SHADER_VERTEX_TRANSFORM_ID = 2;
@@ -36,12 +42,14 @@ static const size_t GAPI_SHADER_LOCATION_COLOR_SHADER_COLOR_ID = 3;
 
 struct GApi {
     ShellConfig config;
-    RegionMemoryBuffer memory_shaders;
+    RegionMemoryBuffer memory;
 
     Shader shaders[3];
     ShaderProgram shader_programs[2];
     u32 shader_uniform_locations[4];
     GLuint buffers[8];
+
+    Font* debug_font;
 
     ShaderProgram shader_program_texture;
     ShaderProgram shader_program_color;
