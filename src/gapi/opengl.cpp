@@ -7,6 +7,7 @@
 #include <glm/gtc/type_ptr.hpp>
 #include "vm.hpp"
 #include "vm_math.hpp"
+#include "vm_glm_adapter.hpp"
 
 const size_t quad_vertices_count = 4;
 const glm::vec2 centered_quad_vertices[quad_vertices_count] = {
@@ -585,24 +586,24 @@ static void gapi_draw_texts(GApi& gapi, BytesBuffer text_size_payload, BytesBuff
 
     // while (cursor < payload.size) {
         const auto text_size = (u32*) &text_size_payload.base[cursor];
-        const auto pos = (Vec2f*) &pos_payload.base[cursor];
+        const auto mvp_mat = (Mat4f*) &pos_payload.base[cursor];
         char text[1024] = {};
 
         memcpy(&text[0], text_payload.base, text_payload.size);
         text[text_payload.size] = '\0';
 
-        printf("Pos: (%f, %f)\n", pos->x, pos->y);
-        printf("Text length: %lu\n", text_payload.size);
-        printf("Font size: %d\n", *text_size);
-        printf("Text: %.*s\n", (int) text_payload.size, text_payload.base);
-        printf("Text: %s\n", &text[0]);
-        puts("---\n");
+        // // printf("Pos: (%f, %f)\n", mvp_mat);
+        // printf("Text length: %lu\n", text_payload.size);
+        // printf("Font size: %d\n", *text_size);
+        // printf("Text: %.*s\n", (int) text_payload.size, text_payload.base);
+        // printf("Text: %s\n", &text[0]);
+        // puts("---\n");
 
         if (text_payload.size == 0) {
             return;
         }
 
-        const auto color = SDL_Color { 0, 0, 0 };
+        const auto color = SDL_Color { 255, 255, 255 };
         auto font_result = get_sdl2_ttf_font(gapi.debug_font, *text_size);
         const auto font = result_unwrap(font_result);
 
@@ -624,6 +625,27 @@ static void gapi_draw_texts(GApi& gapi, BytesBuffer text_size_payload, BytesBuff
         };
 
         auto const texture = create_texture_2d_from_sdl_surface(surface, params);
+
+        glBindTexture(GL_TEXTURE_2D, texture.id);
+
+        // glBindVertexArray(gapi.quad_vao);
+        // glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, gapi.quad_indices_buffer);
+        glBindVertexArray(gapi.quad_vao);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, gapi.quad_indices_buffer);
+
+        const auto loc = gapi.shader_uniform_locations[gapi.mvp_uniform_location_id];
+
+        const auto scale_matrix = glm::scale(
+            glm::mat4(1),
+            glm::vec3(surface->w, surface->h, 1.0f)
+        );
+
+        auto mvp = glm_mat4(*mvp_mat);
+        mvp = mvp * scale_matrix;
+        auto mat = vm_mat4f(mvp);
+
+        glUniformMatrix4fv(loc, 1, GL_TRUE, tech_paws_vm_math_mat4fptr(mat));
+        glDrawElements(GL_TRIANGLE_STRIP, quad_indices_count, GL_UNSIGNED_INT, nullptr);
 
         SDL_FreeSurface(surface);
 
