@@ -581,7 +581,7 @@ static Texture2D create_texture_2d_from_sdl_surface(SDL_Surface const* surface, 
     return update_texture_2d(texture, params);
 }
 
-static void gapi_draw_texts(GApi& gapi, BytesBuffer text_size_payload, BytesBuffer pos_payload, BytesBuffer text_payload) {
+static void gapi_draw_texts(GApi& gapi, BytesBuffer address, BytesBuffer text_size_payload, BytesBuffer pos_payload, BytesBuffer text_payload) {
     u64 cursor = 0;
 
     // while (cursor < payload.size) {
@@ -647,7 +647,26 @@ static void gapi_draw_texts(GApi& gapi, BytesBuffer text_size_payload, BytesBuff
         glUniformMatrix4fv(loc, 1, GL_TRUE, tech_paws_vm_math_mat4fptr(mat));
         glDrawElements(GL_TRIANGLE_STRIP, quad_indices_count, GL_UNSIGNED_INT, nullptr);
 
+        memcpy(&text[0], address.base, address.size);
+        text[address.size] = '\0';
+        auto boundary = vm_vec2f(surface->w, surface->h);
+        auto payload = BytesBuffer {
+            .size = sizeof(Vec2f),
+            .base = (u8*) &boundary,
+        };
+
+        auto command = Command {
+            .id = COMMAND_ADD_TEXT_BOUNDARIES,
+            .count = 1,
+            .from_address = tech_paws_vm_client_id(),
+            .payload = &payload,
+        };
+
+        tech_paws_push_command(&text[0], command, Processor);
+
         SDL_FreeSurface(surface);
+
+        // COMMAND_ADD_TEXT_BOUNDARIES
 
         // cursor += sizeof(TextCommandPayload);
     // }
@@ -673,7 +692,7 @@ void gapi_render(GApi& gapi) {
                 break;
 
             case COMMAND_GAPI_DRAW_TEXTS:
-                gapi_draw_texts(gapi, command->payload[0], command->payload[1], command->payload[2]);
+                gapi_draw_texts(gapi, command->from_address, command->payload[0], command->payload[1], command->payload[2]);
                 break;
 
             case COMMAND_GAPI_DRAW_CENTERED_QUADS:

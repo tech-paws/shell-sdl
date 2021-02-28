@@ -30,13 +30,14 @@ void shell_main_loop(ShellState& shell_state, Platform& platform, Window window)
     frame_info.current_time = platform_get_ticks();
     frame_info.delta_time = frame_info.last_time - frame_info.current_time;
 
-    if (frame_info.current_time >= frame_info.last_time + PART_TIME) {
+    // if (frame_info.current_time >= frame_info.last_time + PART_TIME) {
         shell_step(shell_state, frame_info.delta_time);
         shell_render(platform, shell_state);
+        tech_paws_vm_flush();
         frame_info.frames += 1;
         frame_info.last_time = frame_info.current_time;
         gapi_swap_window(platform, window);
-    }
+    // }
 
     if (frame_info.current_time >= frame_info.frame_time + 1000.0) {
         frame_info.frame_time = frame_info.current_time;
@@ -56,7 +57,7 @@ static void shell_render(Platform& platform, ShellState& shell_state) {
 
 static void shell_step(ShellState& shell_state, double delta_time) {
     tech_paws_vm_process_commands();
-    tech_paws_vm_flush();
+    tech_paws_vm_process_flush();
 }
 
 void shell_shutdown() {

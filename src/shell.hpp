@@ -6,7 +6,7 @@
 #include "shell_state.hpp"
 #include "shell_config.hpp"
 
-static const float PART_TIME = 1000.f / 60.f;
+static const float PART_TIME = 1000.f / 120.f;
 
 Result<ShellState> shell_init(ShellConfig const& config);
 

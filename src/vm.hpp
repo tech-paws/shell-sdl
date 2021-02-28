@@ -1,5 +1,10 @@
 #pragma once
 
+enum Source {
+    GAPI = 0,
+    Processor = 1,
+};
+
 struct BytesBuffer {
     u64 size;
     u8 const* base;
@@ -8,6 +13,7 @@ struct BytesBuffer {
 struct Command {
     u64 id;
     u64 count;
+    BytesBuffer from_address;
     BytesBuffer const* payload;
 };
 
@@ -26,9 +32,15 @@ extern "C" Commands tech_paws_vm_get_commands();
 
 extern "C" Commands tech_paws_vm_get_gapi_commands();
 
+extern "C" BytesBuffer tech_paws_vm_client_id();
+
 extern "C" void tech_paws_vm_gapi_flush();
 
+extern "C" void tech_paws_vm_process_flush();
+
 extern "C" void tech_paws_vm_flush();
+
+extern "C" void tech_paws_push_command(char const* address, Command command, Source source);
 
 extern "C" void tech_paws_vm_log_trace(char const* message);
 
