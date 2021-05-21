@@ -7,6 +7,7 @@
 #include <glm/gtc/type_ptr.hpp>
 #include "vm.hpp"
 #include "vm_math.hpp"
+#include "vm_buffers.hpp"
 #include "vm_glm_adapter.hpp"
 
 const size_t quad_vertices_count = 4;
@@ -471,7 +472,25 @@ void gapi_delete_texture_2d(Texture2D texture) {
     glDeleteTextures(1, &texture.id);
 }
 
-static void gapi_set_color_pipeline(GApi& gapi, BytesBuffer payload) {
+static inline Vec4f read_vec4f(BytesReader& bytes_reader) {
+    return vm_vec4f(
+        vm_buffers_bytes_reader_read_float(bytes_reader),
+        vm_buffers_bytes_reader_read_float(bytes_reader),
+        vm_buffers_bytes_reader_read_float(bytes_reader),
+        vm_buffers_bytes_reader_read_float(bytes_reader)
+    );
+}
+
+static inline Mat4f read_mat4f(BytesReader& bytes_reader) {
+    return vm_mat4f(
+        read_vec4f(bytes_reader),
+        read_vec4f(bytes_reader),
+        read_vec4f(bytes_reader),
+        read_vec4f(bytes_reader)
+    );
+}
+
+static void gapi_set_color_pipeline(GApi& gapi, BytesReader& bytes_reader) {
 
 #ifdef VALIDATE
     glValidateProgram(gapi.shader_program_color.id);
@@ -481,14 +500,15 @@ static void gapi_set_color_pipeline(GApi& gapi, BytesBuffer payload) {
 
     glUseProgram(gapi.shader_program_color.id);
 
-    const auto color = (Vec4f*) payload.base;
+    const auto color = read_vec4f(bytes_reader);
+
     const auto loc = gapi.shader_uniform_locations[GAPI_SHADER_LOCATION_COLOR_SHADER_COLOR_ID];
     gapi.mvp_uniform_location_id = GAPI_SHADER_LOCATION_COLOR_SHADER_MVP_ID;
 
     glUniform4fv(loc, 1, tech_paws_vm_math_vec4fptr(color));
 }
 
-static void gapi_set_texture_pipeline(GApi& gapi, BytesBuffer payload) {
+static void gapi_set_texture_pipeline(GApi& gapi, BytesReader& bytes_reader) {
 
 #ifdef VALIDATE
     glValidateProgram(gapi.shader_program_color.id);
@@ -498,46 +518,42 @@ static void gapi_set_texture_pipeline(GApi& gapi, BytesBuffer payload) {
 
     glUseProgram(gapi.shader_program_texture.id);
 
-    const auto textureId = (u64*) payload.base;
+    const auto textureId = (u64) vm_buffers_bytes_reader_read_int64_t(bytes_reader);
     const auto loc = gapi.shader_uniform_locations[GAPI_SHADER_LOCATION_TEXTURE_SHADER_TEXTURE_ID];
     gapi.mvp_uniform_location_id = GAPI_SHADER_LOCATION_TEXTURE_SHADER_MVP_ID;
 
     glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, *textureId);
+    glBindTexture(GL_TEXTURE_2D, textureId);
     glUniform1i(loc, 1);
 }
 
-static void gapi_draw_quads(GApi& gapi, BytesBuffer payload) {
-    u64 cursor = 0;
-
+static void gapi_draw_quads(GApi& gapi, BytesReader& bytes_reader) {
     glBindVertexArray(gapi.quad_vao);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, gapi.quad_indices_buffer);
 
-    while (cursor < payload.size) {
-        const auto mvp_mat = (Mat4f*) &payload.base[cursor];
+    auto const count = (u64) vm_buffers_bytes_reader_read_int64_t(bytes_reader);
+
+    for (u64 i = 0; i < count; i += 1) {
+        const auto mvp_mat = read_mat4f(bytes_reader);
         const auto loc = gapi.shader_uniform_locations[gapi.mvp_uniform_location_id];
 
         glUniformMatrix4fv(loc, 1, GL_TRUE, tech_paws_vm_math_mat4fptr(mvp_mat));
         glDrawElements(GL_TRIANGLE_STRIP, quad_indices_count, GL_UNSIGNED_INT, nullptr);
-
-        cursor += sizeof(Mat4f);
     }
 }
 
-static void gapi_draw_centered_quads(GApi& gapi, BytesBuffer payload) {
-    u64 cursor = 0;
-
+static void gapi_draw_centered_quads(GApi& gapi, BytesReader& bytes_reader) {
     glBindVertexArray(gapi.centered_quad_vao);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, gapi.quad_indices_buffer);
 
-    while (cursor < payload.size) {
-        const auto mvp_mat = (Mat4f*) &payload.base[cursor];
+    auto const count = (u64) vm_buffers_bytes_reader_read_int64_t(bytes_reader);
+
+    for (u64 i = 0; i < count; i += 1) {
+        const auto mvp_mat = read_mat4f(bytes_reader);
         const auto loc = gapi.shader_uniform_locations[GAPI_SHADER_LOCATION_COLOR_SHADER_MVP_ID];
 
         glUniformMatrix4fv(loc, 1, GL_TRUE, tech_paws_vm_math_mat4fptr(mvp_mat));
         glDrawElements(GL_TRIANGLE_STRIP, quad_indices_count, GL_UNSIGNED_INT, nullptr);
-
-        cursor += sizeof(Mat4f);
     }
 }
 
@@ -581,7 +597,76 @@ static Texture2D create_texture_2d_from_sdl_surface(SDL_Surface const* surface, 
     return update_texture_2d(texture, params);
 }
 
-static void gapi_draw_texts(GApi& gapi, BytesBuffer address, BytesBuffer text_size_payload, BytesBuffer pos_payload, BytesBuffer text_payload) {
+static void gapi_draw_texts(GApi& gapi, BytesReader& bytes_reader) {
+    auto const count = (u64) vm_buffers_bytes_reader_read_int64_t(bytes_reader);
+
+    for (u64 i = 0; i < count; i += 1) {
+        const auto font_id = (u64) vm_buffers_bytes_reader_read_int64_t(bytes_reader);
+        const auto font_size = (u32) vm_buffers_bytes_reader_read_int32_t(bytes_reader);
+        const auto mvp_matrix = read_mat4f(bytes_reader);
+
+        // read text
+        const auto str_len = (u64) vm_buffers_bytes_reader_read_int64_t(bytes_reader);
+        const auto str_buff = vm_buffers_bytes_reader_read_bytes_buffer(bytes_reader, str_len);
+
+        char text[1024] = {};
+        memcpy(&text[0], str_buff, (size_t) str_len);
+        text[str_len] = '\0';
+
+        if (str_len == 0) {
+            return;
+        }
+
+        const auto color = SDL_Color { 255, 255, 255 };
+        auto font_result = get_sdl2_ttf_font(gapi.debug_font, font_size);
+        const auto font = result_unwrap(font_result);
+
+        SDL_Surface* surface = TTF_RenderText_Blended(font, &text[0], color);
+
+        if (!surface) {
+            result_unwrap(
+                result_create_general_error<bool>(
+                    ErrorCode::RenderText,
+                    TTF_GetError()
+                )
+            );
+        }
+
+        const Texture2DParameters params = {
+            .min_filter = false,
+            .mag_filter = false
+        };
+
+        auto const texture = create_texture_2d_from_sdl_surface(surface, params);
+
+        glBindTexture(GL_TEXTURE_2D, texture.id);
+
+        // glBindVertexArray(gapi.quad_vao);
+        // glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, gapi.quad_indices_buffer);
+        glBindVertexArray(gapi.quad_vao);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, gapi.quad_indices_buffer);
+
+        const auto loc = gapi.shader_uniform_locations[gapi.mvp_uniform_location_id];
+
+        const auto scale_matrix = glm::scale(
+            glm::mat4(1),
+            glm::vec3(surface->w, surface->h, 1.0f)
+        );
+
+        auto mvp = glm_mat4(mvp_matrix);
+        mvp = mvp * scale_matrix;
+        auto mat = vm_mat4f(mvp);
+
+        glUniformMatrix4fv(loc, 1, GL_TRUE, tech_paws_vm_math_mat4fptr(&mat));
+        glDrawElements(GL_TRIANGLE_STRIP, quad_indices_count, GL_UNSIGNED_INT, nullptr);
+
+        // TODO(sysint64): send calculated text boundary
+
+        SDL_FreeSurface(surface);
+    }
+}
+
+static void old_gapi_draw_texts(GApi& gapi, BytesBuffer address, BytesBuffer text_size_payload, BytesBuffer pos_payload, BytesBuffer text_payload) {
     u64 cursor = 0;
 
     // while (cursor < payload.size) {
@@ -644,7 +729,7 @@ static void gapi_draw_texts(GApi& gapi, BytesBuffer address, BytesBuffer text_si
         mvp = mvp * scale_matrix;
         auto mat = vm_mat4f(mvp);
 
-        glUniformMatrix4fv(loc, 1, GL_TRUE, tech_paws_vm_math_mat4fptr(mat));
+        glUniformMatrix4fv(loc, 1, GL_TRUE, tech_paws_vm_math_mat4fptr(&mat));
         glDrawElements(GL_TRIANGLE_STRIP, quad_indices_count, GL_UNSIGNED_INT, nullptr);
 
         memcpy(&text[0], address.base, address.size);
@@ -673,46 +758,41 @@ static void gapi_draw_texts(GApi& gapi, BytesBuffer address, BytesBuffer text_si
 }
 
 void gapi_render(GApi& gapi) {
-    Commands commands = tech_paws_vm_get_gapi_commands();
-    size_t cursor = 0;
+    const auto commands_buffer = tech_paws_vm_get_commands_buffer();
+    auto bytes_reader = vm_buffers_create_bytes_reader(ByteOrder::LittleEndian, commands_buffer.base, (size_t) commands_buffer.size);
+    const auto count = (uint64_t) vm_buffers_bytes_reader_read_int64_t(bytes_reader);
 
-    if (commands.size == 0) {
-        return;
-    }
+    for (int i = 0; i < count; i += 1) {
+        const auto command_id = (uint64_t) vm_buffers_bytes_reader_read_int64_t(bytes_reader);
+        const auto skip = (uint64_t) vm_buffers_bytes_reader_read_int64_t(bytes_reader);
 
-    int i = 0;
-
-    while (cursor < commands.size) {
-        auto command = &commands.data[i];
-
-        // TODO(sysint64): validations
-        switch (command->id) {
-            case COMMAND_GAPI_DRAW_QUADS:
-                gapi_draw_quads(gapi, command->payload[0]);
-                break;
-
-            case COMMAND_GAPI_DRAW_TEXTS:
-                gapi_draw_texts(gapi, command->from_address, command->payload[0], command->payload[1], command->payload[2]);
-                break;
-
-            case COMMAND_GAPI_DRAW_CENTERED_QUADS:
-                gapi_draw_centered_quads(gapi, command->payload[0]);
-                break;
-
+        switch (command_id) {
             case COMMAND_GAPI_SET_COLOR_PIPELINE:
-                gapi_set_color_pipeline(gapi, command->payload[0]);
+                gapi_set_color_pipeline(gapi, bytes_reader);
                 break;
 
             case COMMAND_GAPI_SET_TEXTURE_PIPELINE:
-                gapi_set_texture_pipeline(gapi, command->payload[0]);
+                gapi_set_texture_pipeline(gapi, bytes_reader);
+                break;
+
+            case COMMAND_GAPI_DRAW_CENTERED_QUADS:
+                gapi_draw_centered_quads(gapi, bytes_reader);
+                break;
+
+            case COMMAND_GAPI_DRAW_QUADS:
+                gapi_draw_quads(gapi, bytes_reader);
+                break;
+
+            case COMMAND_GAPI_DRAW_TEXTS:
+                gapi_draw_texts(gapi, bytes_reader);
                 break;
 
             default:
-                printf("Unknown command type: 0x%04lX\n", command->id);
-                break;
+                vm_buffers_bytes_reader_skip(bytes_reader, (size_t) skip);
+                log_error("Unknown command id: 0x%.8llx", command_id);
         }
-
-        cursor += sizeof(Command);
-        i += 1;
     }
+}
+
+void collect_text_bounds(GApi& gapi) {
 }

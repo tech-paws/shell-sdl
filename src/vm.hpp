@@ -10,6 +10,11 @@ struct BytesBuffer {
     u8 const* base;
 };
 
+struct MutBytesBuffer {
+    u64 size;
+    u8* base;
+};
+
 struct Command {
     u64 id;
     u64 count;
@@ -51,3 +56,5 @@ extern "C" void tech_paws_vm_log_warn(char const* message);
 extern "C" void tech_paws_vm_log_debug(char const* message);
 
 extern "C" void tech_paws_vm_log_info(char const* message);
+
+extern "C" MutBytesBuffer tech_paws_vm_get_commands_buffer();
