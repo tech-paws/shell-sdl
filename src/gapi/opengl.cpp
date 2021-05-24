@@ -606,7 +606,19 @@ static void push_text_boundary(char const* to, float w, float h) {
     tech_paws_end_command(to, Source::Processor);
 }
 
-static void gapi_draw_texts(GApi& gapi, char* from_address, BytesReader* bytes_reader) {
+static void gapi_draw_texts(GApi& gapi, BytesReader* bytes_reader) {
+    // read from address
+    const auto from_addr_len = (u64) vm_buffers_bytes_reader_read_int64_t(bytes_reader);
+    const auto from_addr_buff = vm_buffers_bytes_reader_read_bytes_buffer(bytes_reader, from_addr_len);
+
+    char from_addr[256] = {};
+    memcpy(&from_addr[0], from_addr_buff, (size_t) from_addr_len);
+    from_addr[from_addr_len] = '\0';
+
+    if (from_addr_len == 0) {
+        return;
+    }
+
     auto const count = (u64) vm_buffers_bytes_reader_read_int64_t(bytes_reader);
 
     for (u64 i = 0; i < count; i += 1) {
@@ -618,7 +630,7 @@ static void gapi_draw_texts(GApi& gapi, char* from_address, BytesReader* bytes_r
         const auto str_len = (u64) vm_buffers_bytes_reader_read_int64_t(bytes_reader);
         const auto str_buff = vm_buffers_bytes_reader_read_bytes_buffer(bytes_reader, str_len);
 
-        char text[1024] = {};
+        char text[256] = {};
         memcpy(&text[0], str_buff, (size_t) str_len);
         text[str_len] = '\0';
 
@@ -670,7 +682,7 @@ static void gapi_draw_texts(GApi& gapi, char* from_address, BytesReader* bytes_r
         glDrawElements(GL_TRIANGLE_STRIP, quad_indices_count, GL_UNSIGNED_INT, nullptr);
 
         // Send calculated boundary
-        push_text_boundary(from_address, surface->w, surface->h);
+        push_text_boundary(&from_addr[0], surface->w, surface->h);
 
         SDL_FreeSurface(surface);
     }
@@ -685,7 +697,7 @@ void gapi_render(GApi& gapi) {
     const auto str_len = (u64) vm_buffers_bytes_reader_read_int64_t(&bytes_reader);
     const auto str_buff = vm_buffers_bytes_reader_read_bytes_buffer(&bytes_reader, str_len);
 
-    char from_address[1024] = {};
+    char from_address[256] = {};
     memcpy(&from_address[0], str_buff, (size_t) str_len);
     from_address[str_len] = '\0';
 
@@ -715,7 +727,7 @@ void gapi_render(GApi& gapi) {
                 break;
 
             case COMMAND_GAPI_DRAW_TEXTS:
-                gapi_draw_texts(gapi, &from_address[0], &bytes_reader);
+                gapi_draw_texts(gapi, &bytes_reader);
                 break;
 
             default:

@@ -35,7 +35,7 @@ void shell_main_loop(ShellState& shell_state, Platform& platform, Window window)
     shell_step(shell_state, frame_info.delta_time);
     shell_render(platform, shell_state);
 
-    tech_paws_vm_flush();
+    // tech_paws_vm_flush();
     frame_info.frames += 1;
     frame_info.last_time = frame_info.current_time;
     gapi_swap_window(platform, window);
@@ -52,12 +52,10 @@ void shell_main_loop(ShellState& shell_state, Platform& platform, Window window)
 static void shell_render(Platform& platform, ShellState& shell_state) {
     gapi_clear(0.0f, 0.0f, 0.0f);
     gapi_render(platform.gapi);
-    tech_paws_vm_gapi_flush();
 }
 
 static void shell_step(ShellState& shell_state, double delta_time) {
     tech_paws_vm_process_commands();
-    tech_paws_vm_process_flush();
 }
 
 void shell_shutdown() {
