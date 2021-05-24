@@ -1,5 +1,7 @@
 #pragma once
 
+#include "vm_buffers.hpp"
+
 enum Source {
     GAPI = 0,
     Processor = 1,
@@ -58,3 +60,7 @@ extern "C" void tech_paws_vm_log_debug(char const* message);
 extern "C" void tech_paws_vm_log_info(char const* message);
 
 extern "C" MutBytesBuffer tech_paws_vm_get_commands_buffer();
+
+extern "C" BytesWriter* tech_paws_begin_command(char const* to, Source source, u64 id);
+
+extern "C" void tech_paws_end_command(char const* to, Source source);

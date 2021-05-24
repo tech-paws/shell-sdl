@@ -472,7 +472,7 @@ void gapi_delete_texture_2d(Texture2D texture) {
     glDeleteTextures(1, &texture.id);
 }
 
-static inline Vec4f read_vec4f(BytesReader& bytes_reader) {
+static inline Vec4f read_vec4f(BytesReader* bytes_reader) {
     return vm_vec4f(
         vm_buffers_bytes_reader_read_float(bytes_reader),
         vm_buffers_bytes_reader_read_float(bytes_reader),
@@ -481,7 +481,7 @@ static inline Vec4f read_vec4f(BytesReader& bytes_reader) {
     );
 }
 
-static inline Mat4f read_mat4f(BytesReader& bytes_reader) {
+static inline Mat4f read_mat4f(BytesReader* bytes_reader) {
     return vm_mat4f(
         read_vec4f(bytes_reader),
         read_vec4f(bytes_reader),
@@ -490,7 +490,7 @@ static inline Mat4f read_mat4f(BytesReader& bytes_reader) {
     );
 }
 
-static void gapi_set_color_pipeline(GApi& gapi, BytesReader& bytes_reader) {
+static void gapi_set_color_pipeline(GApi& gapi, BytesReader* bytes_reader) {
 
 #ifdef VALIDATE
     glValidateProgram(gapi.shader_program_color.id);
@@ -508,7 +508,7 @@ static void gapi_set_color_pipeline(GApi& gapi, BytesReader& bytes_reader) {
     glUniform4fv(loc, 1, tech_paws_vm_math_vec4fptr(color));
 }
 
-static void gapi_set_texture_pipeline(GApi& gapi, BytesReader& bytes_reader) {
+static void gapi_set_texture_pipeline(GApi& gapi, BytesReader* bytes_reader) {
 
 #ifdef VALIDATE
     glValidateProgram(gapi.shader_program_color.id);
@@ -527,7 +527,7 @@ static void gapi_set_texture_pipeline(GApi& gapi, BytesReader& bytes_reader) {
     glUniform1i(loc, 1);
 }
 
-static void gapi_draw_quads(GApi& gapi, BytesReader& bytes_reader) {
+static void gapi_draw_quads(GApi& gapi, BytesReader* bytes_reader) {
     glBindVertexArray(gapi.quad_vao);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, gapi.quad_indices_buffer);
 
@@ -542,7 +542,7 @@ static void gapi_draw_quads(GApi& gapi, BytesReader& bytes_reader) {
     }
 }
 
-static void gapi_draw_centered_quads(GApi& gapi, BytesReader& bytes_reader) {
+static void gapi_draw_centered_quads(GApi& gapi, BytesReader* bytes_reader) {
     glBindVertexArray(gapi.centered_quad_vao);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, gapi.quad_indices_buffer);
 
@@ -597,7 +597,16 @@ static Texture2D create_texture_2d_from_sdl_surface(SDL_Surface const* surface, 
     return update_texture_2d(texture, params);
 }
 
-static void gapi_draw_texts(GApi& gapi, BytesReader& bytes_reader) {
+static void push_text_boundary(char const* to, float w, float h) {
+    const auto bytes_writer = tech_paws_begin_command(to, Source::Processor, COMMAND_ADD_TEXT_BOUNDARIES);
+
+    vm_buffers_bytes_writer_write_float(bytes_writer, w);
+    vm_buffers_bytes_writer_write_float(bytes_writer, h);
+
+    tech_paws_end_command(to, Source::Processor);
+}
+
+static void gapi_draw_texts(GApi& gapi, char* from_address, BytesReader* bytes_reader) {
     auto const count = (u64) vm_buffers_bytes_reader_read_int64_t(bytes_reader);
 
     for (u64 i = 0; i < count; i += 1) {
@@ -660,135 +669,57 @@ static void gapi_draw_texts(GApi& gapi, BytesReader& bytes_reader) {
         glUniformMatrix4fv(loc, 1, GL_TRUE, tech_paws_vm_math_mat4fptr(&mat));
         glDrawElements(GL_TRIANGLE_STRIP, quad_indices_count, GL_UNSIGNED_INT, nullptr);
 
-        // TODO(sysint64): send calculated text boundary
+        // Send calculated boundary
+        push_text_boundary(from_address, surface->w, surface->h);
 
         SDL_FreeSurface(surface);
     }
 }
 
-static void old_gapi_draw_texts(GApi& gapi, BytesBuffer address, BytesBuffer text_size_payload, BytesBuffer pos_payload, BytesBuffer text_payload) {
-    u64 cursor = 0;
-
-    // while (cursor < payload.size) {
-        const auto text_size = (u32*) &text_size_payload.base[cursor];
-        const auto mvp_mat = (Mat4f*) &pos_payload.base[cursor];
-        char text[1024] = {};
-
-        memcpy(&text[0], text_payload.base, text_payload.size);
-        text[text_payload.size] = '\0';
-
-        // // printf("Pos: (%f, %f)\n", mvp_mat);
-        // printf("Text length: %lu\n", text_payload.size);
-        // printf("Font size: %d\n", *text_size);
-        // printf("Text: %.*s\n", (int) text_payload.size, text_payload.base);
-        // printf("Text: %s\n", &text[0]);
-        // puts("---\n");
-
-        if (text_payload.size == 0) {
-            return;
-        }
-
-        const auto color = SDL_Color { 255, 255, 255 };
-        auto font_result = get_sdl2_ttf_font(gapi.debug_font, *text_size);
-        const auto font = result_unwrap(font_result);
-
-        SDL_Surface* surface = TTF_RenderText_Blended(font, &text[0], color);
-
-        if (!surface) {
-            result_unwrap(
-                result_create_general_error<bool>(
-                    ErrorCode::RenderText,
-                    TTF_GetError()
-                )
-            );
-            // throw new Error("Unable create text texture: " ~ to!string(TTF_GetError()));
-        }
-
-        const Texture2DParameters params = {
-            .min_filter = false,
-            .mag_filter = false
-        };
-
-        auto const texture = create_texture_2d_from_sdl_surface(surface, params);
-
-        glBindTexture(GL_TEXTURE_2D, texture.id);
-
-        // glBindVertexArray(gapi.quad_vao);
-        // glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, gapi.quad_indices_buffer);
-        glBindVertexArray(gapi.quad_vao);
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, gapi.quad_indices_buffer);
-
-        const auto loc = gapi.shader_uniform_locations[gapi.mvp_uniform_location_id];
-
-        const auto scale_matrix = glm::scale(
-            glm::mat4(1),
-            glm::vec3(surface->w, surface->h, 1.0f)
-        );
-
-        auto mvp = glm_mat4(*mvp_mat);
-        mvp = mvp * scale_matrix;
-        auto mat = vm_mat4f(mvp);
-
-        glUniformMatrix4fv(loc, 1, GL_TRUE, tech_paws_vm_math_mat4fptr(&mat));
-        glDrawElements(GL_TRIANGLE_STRIP, quad_indices_count, GL_UNSIGNED_INT, nullptr);
-
-        memcpy(&text[0], address.base, address.size);
-        text[address.size] = '\0';
-        auto boundary = vm_vec2f(surface->w, surface->h);
-        auto payload = BytesBuffer {
-            .size = sizeof(Vec2f),
-            .base = (u8*) &boundary,
-        };
-
-        auto command = Command {
-            .id = COMMAND_ADD_TEXT_BOUNDARIES,
-            .count = 1,
-            .from_address = tech_paws_vm_client_id(),
-            .payload = &payload,
-        };
-
-        tech_paws_push_command(&text[0], command, Processor);
-
-        SDL_FreeSurface(surface);
-
-        // COMMAND_ADD_TEXT_BOUNDARIES
-
-        // cursor += sizeof(TextCommandPayload);
-    // }
-}
-
 void gapi_render(GApi& gapi) {
     const auto commands_buffer = tech_paws_vm_get_commands_buffer();
     auto bytes_reader = vm_buffers_create_bytes_reader(ByteOrder::LittleEndian, commands_buffer.base, (size_t) commands_buffer.size);
-    const auto count = (uint64_t) vm_buffers_bytes_reader_read_int64_t(bytes_reader);
+    const auto count = (uint64_t) vm_buffers_bytes_reader_read_int64_t(&bytes_reader);
+
+    // read text
+    const auto str_len = (u64) vm_buffers_bytes_reader_read_int64_t(&bytes_reader);
+    const auto str_buff = vm_buffers_bytes_reader_read_bytes_buffer(&bytes_reader, str_len);
+
+    char from_address[1024] = {};
+    memcpy(&from_address[0], str_buff, (size_t) str_len);
+    from_address[str_len] = '\0';
+
+    if (str_len == 0) {
+        return;
+    }
 
     for (int i = 0; i < count; i += 1) {
-        const auto command_id = (uint64_t) vm_buffers_bytes_reader_read_int64_t(bytes_reader);
-        const auto skip = (uint64_t) vm_buffers_bytes_reader_read_int64_t(bytes_reader);
+        const auto command_id = (uint64_t) vm_buffers_bytes_reader_read_int64_t(&bytes_reader);
+        const auto skip = (uint64_t) vm_buffers_bytes_reader_read_int64_t(&bytes_reader);
 
         switch (command_id) {
             case COMMAND_GAPI_SET_COLOR_PIPELINE:
-                gapi_set_color_pipeline(gapi, bytes_reader);
+                gapi_set_color_pipeline(gapi, &bytes_reader);
                 break;
 
             case COMMAND_GAPI_SET_TEXTURE_PIPELINE:
-                gapi_set_texture_pipeline(gapi, bytes_reader);
+                gapi_set_texture_pipeline(gapi, &bytes_reader);
                 break;
 
             case COMMAND_GAPI_DRAW_CENTERED_QUADS:
-                gapi_draw_centered_quads(gapi, bytes_reader);
+                gapi_draw_centered_quads(gapi, &bytes_reader);
                 break;
 
             case COMMAND_GAPI_DRAW_QUADS:
-                gapi_draw_quads(gapi, bytes_reader);
+                gapi_draw_quads(gapi, &bytes_reader);
                 break;
 
             case COMMAND_GAPI_DRAW_TEXTS:
-                gapi_draw_texts(gapi, bytes_reader);
+                gapi_draw_texts(gapi, &from_address[0], &bytes_reader);
                 break;
 
             default:
-                vm_buffers_bytes_reader_skip(bytes_reader, (size_t) skip);
+                vm_buffers_bytes_reader_skip(&bytes_reader, (size_t) skip);
                 log_error("Unknown command id: 0x%.8llx", command_id);
         }
     }
