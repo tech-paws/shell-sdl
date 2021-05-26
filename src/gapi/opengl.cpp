@@ -209,6 +209,18 @@ static void init_quad(GApi& gapi) {
     gapi_create_vector2f_vao(gapi.centered_quad_tex_coords_buffer, 1);
 }
 
+static void init_lines(GApi& gapi) {
+    gapi.lines_vertices.reserve(100);
+    gapi.lines_indices.reserve(100);
+
+    create_buffer(&gapi.lines_indices_buffer, &gapi.lines_indices[0], 0, true);
+    create_buffer(&gapi.lines_vertices_buffer, &gapi.lines_vertices[0], 0, true);
+    glGenVertexArrays(1, &gapi.lines_vao);
+
+    glBindVertexArray(gapi.lines_vao);
+    gapi_create_vector2f_vao(gapi.lines_vertices_buffer, 0);
+}
+
 static Result<bool> gapi_load_shader(GApi& gapi, size_t id, const char* name, const char* file_name, ShaderType type) {
     const Result<AssetData> shader_asset_result = asset_load_data(
         gapi.config,
@@ -371,6 +383,7 @@ Result<GApi> gapi_init(ShellConfig const& config) {
         // Geometry
         init_quad(gapi);
         init_centered_quad(gapi);
+        init_lines(gapi);
 
         // Fonts
 
@@ -472,6 +485,21 @@ void gapi_delete_texture_2d(Texture2D texture) {
     glDeleteTextures(1, &texture.id);
 }
 
+static inline Vec2f read_vec2f(BytesReader* bytes_reader) {
+    return vm_vec2f(
+        vm_buffers_bytes_reader_read_float(bytes_reader),
+        vm_buffers_bytes_reader_read_float(bytes_reader)
+    );
+}
+
+static inline Vec3f read_vec3f(BytesReader* bytes_reader) {
+    return vm_vec3f(
+        vm_buffers_bytes_reader_read_float(bytes_reader),
+        vm_buffers_bytes_reader_read_float(bytes_reader),
+        vm_buffers_bytes_reader_read_float(bytes_reader)
+    );
+}
+
 static inline Vec4f read_vec4f(BytesReader* bytes_reader) {
     return vm_vec4f(
         vm_buffers_bytes_reader_read_float(bytes_reader),
@@ -555,6 +583,39 @@ static void gapi_draw_centered_quads(GApi& gapi, BytesReader* bytes_reader) {
         glUniformMatrix4fv(loc, 1, GL_TRUE, tech_paws_vm_math_mat4fptr(mvp_mat));
         glDrawElements(GL_TRIANGLE_STRIP, quad_indices_count, GL_UNSIGNED_INT, nullptr);
     }
+}
+
+static void gapi_draw_lines(GApi& gapi, BytesReader* bytes_reader) {
+    const auto mvp_mat = read_mat4f(bytes_reader);
+    auto const count = (u64) vm_buffers_bytes_reader_read_int64_t(bytes_reader);
+
+    gapi.lines_vertices.clear();
+    gapi.lines_indices.clear();
+
+    for (u64 i = 0; i < count; i += 1) {
+        const auto point = read_vec2f(bytes_reader);
+        gapi.lines_vertices.push_back(point);
+        gapi.lines_indices.push_back(i);
+        // const auto mvp_mat = read_mat4f(bytes_reader);
+        // const auto loc = gapi.shader_uniform_locations[gapi.mvp_uniform_location_id];
+
+        // glUniformMatrix4fv(loc, 1, GL_TRUE, tech_paws_vm_math_mat4fptr(mvp_mat));
+        // glDrawElements(GL_TRIANGLE_STRIP, indices_count, GL_UNSIGNED_INT, nullptr);
+    }
+
+    glBindBuffer(GL_ARRAY_BUFFER, gapi.lines_indices_buffer);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(u32) * gapi.lines_indices.size(), &gapi.lines_indices[0], GL_STREAM_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, gapi.lines_vertices_buffer);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(Vec2f) * gapi.lines_vertices.size(), &gapi.lines_vertices[0], GL_STREAM_DRAW);
+
+    // draw
+    glBindVertexArray(gapi.lines_vao);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, gapi.lines_indices_buffer);
+
+    const auto loc = gapi.shader_uniform_locations[gapi.mvp_uniform_location_id];
+
+    glUniformMatrix4fv(loc, 1, GL_TRUE, tech_paws_vm_math_mat4fptr(mvp_mat));
+    glDrawElements(GL_LINES, gapi.lines_indices.size(), GL_UNSIGNED_INT, nullptr);
 }
 
 static Texture2D update_texture_2d(Texture2D texture, Texture2DParameters params) {
@@ -724,6 +785,10 @@ void gapi_render(GApi& gapi) {
 
             case COMMAND_GAPI_DRAW_QUADS:
                 gapi_draw_quads(gapi, &bytes_reader);
+                break;
+
+            case COMMAND_GAPI_DRAW_LINES:
+                gapi_draw_lines(gapi, &bytes_reader);
                 break;
 
             case COMMAND_GAPI_DRAW_TEXTS:

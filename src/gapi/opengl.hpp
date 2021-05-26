@@ -1,8 +1,10 @@
 #pragma once
 
+#include <vector>
 #include <GL/glew.h>
 #include "memory.hpp"
 #include "shell_config.hpp"
+#include "vm_math.hpp"
 
 enum class ShaderType {
     vertex,
@@ -63,6 +65,13 @@ struct GApi {
     GLuint centered_quad_vertices_buffer;
     GLuint centered_quad_tex_coords_buffer;
     GLuint centered_quad_vao;
+
+    GLuint lines_indices_buffer;
+    GLuint lines_vertices_buffer;
+    GLuint lines_vao;
+
+    std::vector<Vec2f> lines_vertices;
+    std::vector<i32> lines_indices;
 
     size_t mvp_uniform_location_id;
 };
