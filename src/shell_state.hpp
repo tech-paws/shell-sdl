@@ -20,4 +20,5 @@ struct ShellState {
     ShellConfig config;
     FrameInfo frame_info;
     ShellMemory memory;
+    bool rendered = false;
 };

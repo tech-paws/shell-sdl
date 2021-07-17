@@ -5,7 +5,7 @@
 
 static void shell_render(Platform& platform, ShellState& shell_state);
 
-static void shell_step(ShellState& shell_state, double deltaTime);
+static bool shell_step(ShellState& shell_state, double deltaTime);
 
 Result<ShellState> shell_init(ShellConfig const& config) {
     auto shell_state = ShellState();
@@ -30,23 +30,26 @@ void shell_main_loop(ShellState& shell_state, Platform& platform, Window window)
     frame_info.current_time = platform_get_ticks();
     frame_info.delta_time = frame_info.last_time - frame_info.current_time;
 
-    shell_step(shell_state, frame_info.delta_time);
-    tech_paws_vm_process_render_commands();
-    collect_text_bounds(platform.gapi);
-    shell_render(platform, shell_state);
+    if (shell_step(shell_state, frame_info.delta_time) || !shell_state.rendered) {
+        tech_paws_vm_process_render_commands();
+        collect_text_bounds(platform.gapi);
 
-    // tech_paws_vm_flush();
-    frame_info.frames += 1;
-    frame_info.last_time = frame_info.current_time;
-    gapi_swap_window(platform, window);
+        // tech_paws_vm_flush();
+        frame_info.frames += 1;
 
-    if (frame_info.current_time >= frame_info.frame_time + 1000.0) {
-        frame_info.frame_time = frame_info.current_time;
-        frame_info.fps = frame_info.frames;
-        frame_info.frames = 1;
+        if (frame_info.current_time >= frame_info.frame_time + 1000.0) {
+            frame_info.frame_time = frame_info.current_time;
+            frame_info.fps = frame_info.frames;
+            frame_info.frames = 1;
 
-        printf("FPS: %d\n", frame_info.fps);
+            printf("FPS: %d\n", frame_info.fps);
+        }
     }
+
+    shell_render(platform, shell_state);
+    shell_state.rendered = true;
+    gapi_swap_window(platform, window);
+    frame_info.last_time = frame_info.current_time;
 }
 
 static void shell_render(Platform& platform, ShellState& shell_state) {
@@ -54,8 +57,8 @@ static void shell_render(Platform& platform, ShellState& shell_state) {
     gapi_render(platform.gapi);
 }
 
-static void shell_step(ShellState& shell_state, double delta_time) {
-    tech_paws_vm_process_commands();
+static bool shell_step(ShellState& shell_state, double delta_time) {
+    return tech_paws_vm_process_commands();
 }
 
 void shell_shutdown() {

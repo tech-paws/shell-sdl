@@ -66,7 +66,7 @@ struct Commands {
 
 extern "C" void tech_paws_vm_init();
 
-extern "C" void tech_paws_vm_process_commands();
+extern "C" bool tech_paws_vm_process_commands();
 
 extern "C" void tech_paws_vm_process_render_commands();
 
