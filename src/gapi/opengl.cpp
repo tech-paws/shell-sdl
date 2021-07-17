@@ -1,6 +1,5 @@
 #include "primitives.hpp"
 #include "gapi/opengl.hpp"
-#include "gapi/commands.hpp"
 #include "platform.hpp"
 #include "assets.hpp"
 #include <glm/glm.hpp>
@@ -596,11 +595,6 @@ static void gapi_draw_lines(GApi& gapi, BytesReader* bytes_reader) {
         const auto point = read_vec2f(bytes_reader);
         gapi.lines_vertices.push_back(point);
         gapi.lines_indices.push_back(i);
-        // const auto mvp_mat = read_mat4f(bytes_reader);
-        // const auto loc = gapi.shader_uniform_locations[gapi.mvp_uniform_location_id];
-
-        // glUniformMatrix4fv(loc, 1, GL_TRUE, tech_paws_vm_math_mat4fptr(mvp_mat));
-        // glDrawElements(GL_TRIANGLE_STRIP, indices_count, GL_UNSIGNED_INT, nullptr);
     }
 
     glBindBuffer(GL_ARRAY_BUFFER, gapi.lines_indices_buffer);
@@ -616,6 +610,34 @@ static void gapi_draw_lines(GApi& gapi, BytesReader* bytes_reader) {
 
     glUniformMatrix4fv(loc, 1, GL_TRUE, tech_paws_vm_math_mat4fptr(mvp_mat));
     glDrawElements(GL_LINES, gapi.lines_indices.size(), GL_UNSIGNED_INT, nullptr);
+}
+
+static void gapi_draw_path(GApi& gapi, BytesReader* bytes_reader) {
+    const auto mvp_mat = read_mat4f(bytes_reader);
+    auto const count = (u64) vm_buffers_bytes_reader_read_int64_t(bytes_reader);
+
+    gapi.lines_vertices.clear();
+    gapi.lines_indices.clear();
+
+    for (u64 i = 0; i < count; i += 1) {
+        const auto point = read_vec2f(bytes_reader);
+        gapi.lines_vertices.push_back(point);
+        gapi.lines_indices.push_back(i);
+    }
+
+    glBindBuffer(GL_ARRAY_BUFFER, gapi.lines_indices_buffer);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(u32) * gapi.lines_indices.size(), &gapi.lines_indices[0], GL_STREAM_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, gapi.lines_vertices_buffer);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(Vec2f) * gapi.lines_vertices.size(), &gapi.lines_vertices[0], GL_STREAM_DRAW);
+
+    // draw
+    glBindVertexArray(gapi.lines_vao);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, gapi.lines_indices_buffer);
+
+    const auto loc = gapi.shader_uniform_locations[gapi.mvp_uniform_location_id];
+
+    glUniformMatrix4fv(loc, 1, GL_TRUE, tech_paws_vm_math_mat4fptr(mvp_mat));
+    glDrawElements(GL_LINE_STRIP, gapi.lines_indices.size(), GL_UNSIGNED_INT, nullptr);
 }
 
 static Texture2D update_texture_2d(Texture2D texture, Texture2DParameters params) {
@@ -789,6 +811,10 @@ void gapi_render(GApi& gapi) {
 
             case COMMAND_GAPI_DRAW_LINES:
                 gapi_draw_lines(gapi, &bytes_reader);
+                break;
+
+            case COMMAND_GAPI_DRAW_PATH:
+                gapi_draw_path(gapi, &bytes_reader);
                 break;
 
             case COMMAND_GAPI_DRAW_TEXTS:

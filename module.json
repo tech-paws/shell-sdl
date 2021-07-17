@@ -2,31 +2,45 @@
     "id": "tech_paws.sdl_shell2.opengl",
     "name": "SDL2 shell (OpenGL)",
     "description": "Shell using SDL2 with OpenGL graphics",
+    "repository": "https://github.com/tech-paws/shell_sdl",
     "version": "0.0.1",
     "dependencies": [
-        "tech_paws.math==0.0.1"
+        {"type": "git", "name": "SDL2", "git": "https://github.com/libsdl-org/SDL.git", "version": "release-2.0.14", "path": "include"},
+        {"type": "module", "name": "tech_paws.vm.math", "version": "master"}
     ],
-    "repository": "https://github.com/tech-paws/shell_sdl",
     "platforms": [
         {
             "os": "linux",
             "arch": "x86_64",
-            "libs": ["libsdl2_shell.so"]
+            "build": [
+                "make clean",
+                "env ARCH=x86_64 TARGET=linux make build"
+            ],
+            "libs": [
+                {"path": "build/libsdl2_shell.so", "name": "libsdl2_shell.so"}
+            ]
         },
         {
-            "os": "macos",
+            "os": "osx",
             "arch": "x86_64",
-            "libs": ["libsdl2_shell.so"]
+            "build": [
+                "make clean",
+                "env ARCH=x86_64 TARGET=osx make build"
+            ],
+            "libs": [
+                {"path": "build/libsdl2_shell.so", "name": "libsdl2_shell.so"}
+            ]
         },
         {
-            "os": "macos",
-            "arch": "m1",
-            "libs": ["libsdl2_shell.so"]
-        },
-        {
-            "os": "windows",
-            "arch": "x86_64",
-            "libs": ["sdl2_shell.dll"]
+            "os": "osx",
+            "arch": "arm64",
+            "build": [
+                "make clean",
+                "env ARCH=x86_64 TARGET=osx make build"
+            ],
+            "libs": [
+                {"path": "build/libsdl2_shell.so", "name": "libsdl2_shell.so"}
+            ]
         }
     ]
 }

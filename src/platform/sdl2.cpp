@@ -1,4 +1,7 @@
 #include "platform/sdl2.hpp"
+#include "vm.hpp"
+#include "vm_math.hpp"
+#include "vm_glm_adapter.hpp"
 
 Result<Platform> platform_init() {
     // Init
@@ -58,6 +61,19 @@ Result<Window> platform_create_window(ShellConfig const& config, Platform& platf
     return result_create_success(window);
 }
 
+u8 serialize_mouse_button(int32_t button) {
+    switch (button) {
+        case SDL_BUTTON_LEFT:
+            return COMMAND_MOUSE_BUTTON_LEFT;
+        case SDL_BUTTON_RIGHT:
+            return COMMAND_MOUSE_BUTTON_RIGHT;
+        case SDL_BUTTON_MIDDLE:
+            return COMMAND_MOUSE_BUTTON_MIDDLE;
+        default:
+            return COMMAND_MOUSE_BUTTON_UNKNOWN;
+    }
+}
+
 bool platform_event_loop(Platform& platform, Window& window) {
     SDL_Event event;
 
@@ -65,9 +81,41 @@ bool platform_event_loop(Platform& platform, Window& window) {
         if (event.type == SDL_QUIT) {
             return false;
         }
+        else if (event.type == SDL_MOUSEBUTTONDOWN) {
+            const auto bytes_writer = tech_paws_begin_command("tech.paws.client", Source::Processor, COMMAND_TOUCH_START);
+
+            vm_buffers_bytes_writer_write_byte(bytes_writer, serialize_mouse_button(event.button.button));
+            vm_buffers_bytes_writer_write_int32_t(bytes_writer, event.button.x);
+            vm_buffers_bytes_writer_write_int32_t(bytes_writer, event.button.y);
+
+            tech_paws_end_command("tech.paws.client", Source::Processor);
+        }
+        else if (event.type == SDL_MOUSEBUTTONUP) {
+            const auto bytes_writer = tech_paws_begin_command("tech.paws.client", Source::Processor, COMMAND_TOUCH_END);
+
+            vm_buffers_bytes_writer_write_byte(bytes_writer, serialize_mouse_button(event.button.button));
+            vm_buffers_bytes_writer_write_int32_t(bytes_writer, event.button.x);
+            vm_buffers_bytes_writer_write_int32_t(bytes_writer, event.button.y);
+
+            tech_paws_end_command("tech.paws.client", Source::Processor);
+        }
+        else if (event.type == SDL_MOUSEMOTION) {
+            const auto bytes_writer = tech_paws_begin_command("tech.paws.client", Source::Processor, COMMAND_TOUCH_MOVE);
+
+            vm_buffers_bytes_writer_write_int32_t(bytes_writer, event.motion.x);
+            vm_buffers_bytes_writer_write_int32_t(bytes_writer, event.motion.y);
+
+            tech_paws_end_command("tech.paws.client", Source::Processor);
+        }
     }
 
     return true;
+}
+
+extern "C" Vec2f platform_get_mouse_state() {
+    int x, y;
+    SDL_GetMouseState(&x, &y);
+    return vm_vec2f(x, y);
 }
 
 float platform_get_ticks() {

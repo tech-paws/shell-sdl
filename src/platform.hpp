@@ -1,8 +1,10 @@
 #pragma once
 
 #include <initializer_list>
+#include <functional>
 #include "shell_config.hpp"
 #include "assets.hpp"
+#include "vm_math.hpp"
 
 struct Platform;
 
@@ -19,6 +21,8 @@ struct Window;
 struct Font;
 
 Result<Platform> platform_init();
+
+extern "C" Vec2f platform_get_mouse_state();
 
 Result<Window> platform_create_window(ShellConfig const& config, Platform& platform);
 

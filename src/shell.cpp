@@ -30,9 +30,9 @@ void shell_main_loop(ShellState& shell_state, Platform& platform, Window window)
     frame_info.current_time = platform_get_ticks();
     frame_info.delta_time = frame_info.last_time - frame_info.current_time;
 
+    shell_step(shell_state, frame_info.delta_time);
     tech_paws_vm_process_render_commands();
     collect_text_bounds(platform.gapi);
-    shell_step(shell_state, frame_info.delta_time);
     shell_render(platform, shell_state);
 
     // tech_paws_vm_flush();
