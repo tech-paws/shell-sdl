@@ -30,6 +30,8 @@ Result<AssetData> platform_load_font(ShellConfig const& config, RegionMemoryBuff
 
 bool platform_event_loop(Platform& platform, Window& window);
 
+void platform_get_window_size(Window& window, int* width, int* height);
+
 float platform_get_ticks();
 
 void platform_swap_window(Platform& platform, Window& window);

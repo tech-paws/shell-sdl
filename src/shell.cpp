@@ -3,7 +3,7 @@
 #include "vm.hpp"
 #include "shell_config.hpp"
 
-static void shell_render(Platform& platform, ShellState& shell_state);
+static void shell_render(Platform& platform, ShellState& shell_state, Window& window);
 
 static bool shell_step(ShellState& shell_state, double deltaTime);
 
@@ -46,15 +46,21 @@ void shell_main_loop(ShellState& shell_state, Platform& platform, Window window)
         }
     }
 
-    shell_render(platform, shell_state);
+    shell_render(platform, shell_state, window);
     shell_state.rendered = true;
     gapi_swap_window(platform, window);
     frame_info.last_time = frame_info.current_time;
 }
 
-static void shell_render(Platform& platform, ShellState& shell_state) {
+static void shell_render(Platform& platform, ShellState& shell_state, Window& window) {
     gapi_clear(0.0f, 0.0f, 0.0f);
     gapi_render(platform.gapi);
+
+    int width;
+    int height;
+
+    platform_get_window_size(window, &width, &height);
+    gapi_set_viewport(0, 0, width, height);
 }
 
 static bool shell_step(ShellState& shell_state, double delta_time) {

@@ -46,3 +46,5 @@ void gapi_render(GApi& gapi);
 Texture2D gapi_create_texture_2d(AssetData data, Texture2DParameters params);
 
 void gapi_delete_texture_2d(Texture2D texture);
+
+void gapi_set_viewport(int x, int y, int width, int height);

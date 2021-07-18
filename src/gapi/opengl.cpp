@@ -771,6 +771,15 @@ static void gapi_draw_texts(GApi& gapi, BytesReader* bytes_reader) {
     }
 }
 
+static void gapi_set_viewport(GApi& gapi, BytesReader* bytes_reader) {
+    puts("set viewport");
+    const auto x = (u32) vm_buffers_bytes_reader_read_int32_t(bytes_reader);
+    const auto y = (u32) vm_buffers_bytes_reader_read_int32_t(bytes_reader);
+    const auto w = (u32) vm_buffers_bytes_reader_read_int32_t(bytes_reader);
+    const auto h = (u32) vm_buffers_bytes_reader_read_int32_t(bytes_reader);
+    glViewport(x, y, w, h);
+}
+
 void gapi_render(GApi& gapi) {
     const auto commands_buffer = tech_paws_vm_get_commands_buffer();
     auto bytes_reader = vm_buffers_create_bytes_reader(ByteOrder::LittleEndian, commands_buffer.base, (size_t) commands_buffer.size);
@@ -821,6 +830,10 @@ void gapi_render(GApi& gapi) {
                 gapi_draw_texts(gapi, &bytes_reader);
                 break;
 
+            case COMMAND_GAPI_SET_VIEWPORT:
+                gapi_set_viewport(gapi, &bytes_reader);
+                break;
+
             default:
                 vm_buffers_bytes_reader_skip(&bytes_reader, (size_t) skip);
                 log_error("Unknown command id: 0x%.8llx", command_id);
@@ -829,4 +842,8 @@ void gapi_render(GApi& gapi) {
 }
 
 void collect_text_bounds(GApi& gapi) {
+}
+
+void gapi_set_viewport(int x, int y, int width, int height) {
+    glViewport(x, y , width, height);
 }

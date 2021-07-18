@@ -29,7 +29,7 @@ Result<Window> platform_create_window(ShellConfig const& config, Platform& platf
         SDL_WINDOWPOS_CENTERED,
         config.window_width,
         config.window_height,
-        SDL_WINDOW_OPENGL
+        SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE
     );
 
     if (sdl_window == nullptr) {
@@ -107,6 +107,14 @@ bool platform_event_loop(Platform& platform, Window& window) {
 
             tech_paws_end_command("tech.paws.client", Source::Processor);
         }
+        else if (event.type == SDL_WINDOWEVENT && event.window.event == SDL_WINDOWEVENT_RESIZED) {
+            const auto bytes_writer = tech_paws_begin_command("tech.paws.client", Source::Processor, COMMAND_UPDATE_VIEWPORT);
+
+            vm_buffers_bytes_writer_write_int32_t(bytes_writer, event.window.data1);
+            vm_buffers_bytes_writer_write_int32_t(bytes_writer, event.window.data2);
+
+            tech_paws_end_command("tech.paws.client", Source::Processor);
+        }
     }
 
     return true;
@@ -133,6 +141,10 @@ void platform_shutdown(Platform& platform) {
 void platform_destroy_window(Window& window) {
     gapi_shutdown(window.gapi_context);
     SDL_DestroyWindow(window.sdl_window);
+}
+
+void platform_get_window_size(Window& window, int* width, int* height) {
+    SDL_GetWindowSize(window.sdl_window, width, height);
 }
 
 Result<AssetData> platform_load_font(ShellConfig const& config, RegionMemoryBuffer* dest_memory, const char* asset_name) {
