@@ -6,6 +6,7 @@
     "version": "0.0.1",
     "dependencies": [
         {"type": "git", "name": "SDL2", "git": "https://github.com/libsdl-org/SDL.git", "version": "release-2.0.14", "path": "include"},
+        {"type": "git", "name": "imgui", "git": "https://github.com/ocornut/imgui.git", "version": "v1.83", "path": "."},
         {"type": "module", "name": "tech_paws.vm.math", "version": "master"}
     ],
     "platforms": [
